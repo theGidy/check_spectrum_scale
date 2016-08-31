@@ -60,7 +60,7 @@ def checkRequirments(args):
     if os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isdir("/usr/lpp/mmfs/bin/mmgetstate"):
         checkResult["returnCode"] = STATE_CRITICAL
         checkResult["returnMessage"] = "CRITICAL - No IBM Spectrum Scale Installation detected."
-        printNagiosOutput(checkResult)       
+        printMonitoringOutput(checkResult)       
     
 
 def checkStatus(args):
