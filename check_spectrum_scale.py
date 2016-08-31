@@ -37,37 +37,53 @@
 ################################################################################
 import argparse
 import sys
-
+import os
 
 ################################################################################
 ## Variable definition
 ################################################################################
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
 
 
 ################################################################################
 ## Function definition
 ################################################################################
-def checkStatus():
+def checkRequirments(args):
+    """
+    Check if following tools are installed on the system:
+        -IBM Spectrum Scale
+    """
+    checkResult = {}
+    if os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isdir("/usr/lpp/mmfs/bin/mmgetstate"):
+        checkResult["returnCode"] = STATE_CRITICAL
+        checkResult["returnMessage"] = "CRITICAL - No IBM Spectrum Scale Installation detected."
+        printNagiosOutput(checkResult)       
+    
+
+def checkStatus(args):
     """
     
     """
     
-def checkFileSystems():
+def checkFileSystems(args):
     """
     
     """
     
-def checkFileSets():
+def checkFileSets(args):
     """
     
     """
     
-def checkPools():
+def checkPools(args):
     """
     
     """
     
-def checkQuota():
+def checkQuota(args):
     """
     
     """
@@ -80,6 +96,7 @@ def argumentParser():
     parser = argparse.ArgumentParser(description='Check status of the gpfs filesystem')
     group = parser.add_argument_group();
     group.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
+    parser.set_defaults(func=checkRequirments) 
     
     subParser = parser.add_subparsers()
     
@@ -126,8 +143,9 @@ def printMonitoringOutput(checkResult):
 ## Main 
 ################################################################################
 if __name__ == '__main__':
+    
     parser = argumentParser()
     args = parser.parse_args()
     # print parser.parse_args()
-
+    args.func(args)
 
