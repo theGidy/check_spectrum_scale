@@ -57,7 +57,7 @@ def checkRequirments(args):
         -IBM Spectrum Scale
     """
     checkResult = {}
-    if os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate"):
+    if not (os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate")):
         checkResult["returnCode"] = STATE_CRITICAL
         checkResult["returnMessage"] = "CRITICAL - No IBM Spectrum Scale Installation detected."
         checkResult["performanceData"] = ""
