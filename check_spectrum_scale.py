@@ -38,6 +38,8 @@
 import argparse
 import sys
 import os
+import subprocess
+
 
 ################################################################################
 ## Variable definition
@@ -51,13 +53,27 @@ STATE_UNKNOWN=3
 ################################################################################
 ## Function definition
 ################################################################################
-def checkRequirments(args):
+def getValueFromList(list,header,row):
+    """
+    Args:
+        list     -     list with first line header and following lines data
+        header   -     the header name (col) to search
+        row      -     the specific row to return
+    Return:
+        Value from the given list
+    """
+    col=list.index(header)
+    
+    return list[col][row]
+
+def checkRequirments():
     """
     Check if following tools are installed on the system:
         -IBM Spectrum Scale
     """
-    checkResult = {}
+
     if not (os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate")):
+        checkResult = {}
         checkResult["returnCode"] = STATE_CRITICAL
         checkResult["returnMessage"] = "CRITICAL - No IBM Spectrum Scale Installation detected."
         checkResult["performanceData"] = ""
@@ -66,8 +82,28 @@ def checkRequirments(args):
 
 def checkStatus(args):
     """
-    
+    Check following settings:
+        - gpfs status
+        - quorum status
+        - how many nodes are online
+        - 
     """
+    bashCommand = "mmgetstate -L -Y"
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    output = process.communicate()[0]
+    lines=output.split("\n")
+    list=[]
+    for line in lines:
+        list.append(line.split(":"))     
+    
+    state=getValueFromList(list,"remarks",1)
+    quorum=getValueFromList(list,"quorum",1)
+    nodeName=getValueFromList(list,"nodeName",1)
+    nodeNumber=getValueFromList(list,"nodeNumber",1)
+    nodesUp=getValueFromList(list,"nodesUp",1)
+    totaleNodes=getValueFromList(list,"totalNodes",1)
+    
+    print("%s %u %u %u %s %s",nodeName,nodeNumber,nodesUp,totalNodes,remarks,quorum)
     
 def checkFileSystems(args):
     """
@@ -97,7 +133,6 @@ def argumentParser():
     parser = argparse.ArgumentParser(description='Check status of the gpfs filesystem')
     group = parser.add_argument_group();
     group.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
-    parser.set_defaults(func=checkRequirments) 
     
     subParser = parser.add_subparsers()
     
@@ -144,9 +179,15 @@ def printMonitoringOutput(checkResult):
 ## Main 
 ################################################################################
 if __name__ == '__main__':
-    
+    checkRequirments()
     parser = argumentParser()
     args = parser.parse_args()
     # print parser.parse_args()
     args.func(args)
+    
+    checkResult = {}
+    checkResult["returnCode"] = STATE_UNKNOWN
+    checkResult["returnMessage"] = "UNKNOWN - No parameters are passed!"
+    checkResult["performanceData"] = ""
+    printMonitoringOutput(checkResult)
 
