@@ -1,4 +1,4 @@
-!/usr/bin/python
+#!/usr/bin/python
 ################################################################################
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,10 +33,101 @@
 
 
 ################################################################################
+## Imports
+################################################################################
+import argparse
+import sys
+
+
+################################################################################
 ## Variable definition
 ################################################################################
 
 
-sys.exit(0)
+################################################################################
+## Function definition
+################################################################################
+def checkStatus():
+    """
+    
+    """
+    
+def checkFileSystems():
+    """
+    
+    """
+    
+def checkFileSets():
+    """
+    
+    """
+    
+def checkPools():
+    """
+    
+    """
+    
+def checkQuota():
+    """
+    
+    """
+
+
+def argumentParser():
+    """
+    Parse the arguments from the command line
+    """
+    parser = argparse.ArgumentParser(description='Check status of the gpfs filesystem')
+    group = parser.add_argument_group();
+    group.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
+    
+    subParser = parser.add_subparsers()
+    
+    statusParser = subParser.add_parser('status', help='Check the health status on the gpfs');
+    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    statusParser.set_defaults(func=checkStatus) 
+    
+    fileSystemParser = subParser.add_parser('filesystems', help='Check filesystems');
+    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    fileSystemParser.set_defaults(func=checkFileSystems) 
+    
+    filesetParser = subParser.add_parser('filesets', help='Check the filesets');
+    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    filesetParser.set_defaults(func=checkFileSets) 
+    
+    poolsParser = subParser.add_parser('pools', help='Check the pools');
+    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    poolsParser.set_defaults(func=checkPools) 
+    
+    quotaParser = subParser.add_parser('quota', help='Check the quota');
+    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    quotaParser.set_defaults(func=checkQuota)    
+
+    return parser
+
+def printMonitoringOutput(checkResult):
+    """
+    Print the result message with the performanceData for the monitoring tool with the given returnCode state.
+    
+    Args:
+        checkResult: HashArray with returnMessage, perfomranceData and returnCode
+    
+    Error:
+        Prints critical state if the parsed checkResult argument is empty.
+    """
+    if checkResult != None:
+        print(checkResult["returnMessage"] + "|" + checkResult["performanceData"])
+        sys.exit(checkResult["returnCode"])
+    else:
+        print("Critical - Error in Script")
+        sys.exit(2)
+        
+################################################################################
+## Main 
+################################################################################
+if __name__ == '__main__':
+    parser = argumentParser()
+    args = parser.parse_args()
+    # print parser.parse_args()
 
 
