@@ -15,4 +15,4 @@ releases:
         name: check_spectrum_scale.py
         url: "file:///check_spectrum_scale.py"
         description: "first version"
-        checksum: D41D8CD98F00B204E9800998ECF8427E 
+        checksum: ffb97e025b2ec3042f2823c490d52d2a 
