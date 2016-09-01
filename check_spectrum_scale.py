@@ -62,6 +62,7 @@ def getValueFromList(list,header,row):
     Return:
         Value from the given list
     """
+    print()
     col=list.index(header)
     
     return list[col][row]
@@ -136,24 +137,24 @@ def argumentParser():
     
     subParser = parser.add_subparsers()
     
-    statusParser = subParser.add_parser('status', help='Check the health status on the gpfs');
+    statusParser = subParser.add_parser('status', help='Check the gpfs status on this node');
     jobGroup = statusParser.add_mutually_exclusive_group(required=True)
     statusParser.set_defaults(func=checkStatus) 
     
     fileSystemParser = subParser.add_parser('filesystems', help='Check filesystems');
-    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    jobGroup = fileSystemParser.add_mutually_exclusive_group(required=True)
     fileSystemParser.set_defaults(func=checkFileSystems) 
     
     filesetParser = subParser.add_parser('filesets', help='Check the filesets');
-    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    jobGroup = filesetParser.add_mutually_exclusive_group(required=True)
     filesetParser.set_defaults(func=checkFileSets) 
     
     poolsParser = subParser.add_parser('pools', help='Check the pools');
-    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    jobGroup = poolsParser.add_mutually_exclusive_group(required=True)
     poolsParser.set_defaults(func=checkPools) 
     
     quotaParser = subParser.add_parser('quota', help='Check the quota');
-    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
+    jobGroup = quotaParser.add_mutually_exclusive_group(required=True)
     quotaParser.set_defaults(func=checkQuota)    
 
     return parser
