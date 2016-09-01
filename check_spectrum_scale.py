@@ -67,6 +67,18 @@ def getValueFromList(list,header,row):
     
     return list[col][row]
 
+def executeBashCommand(command):
+    """
+    Args:
+        command    -    command to execute in bash
+        
+    Return:
+        Returned string from command
+    """
+    
+    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+    return process.communicate()[0]
+
 def checkRequirments():
     """
     Check if following tools are installed on the system:
@@ -89,9 +101,11 @@ def checkStatus(args):
         - how many nodes are online
         - 
     """
-    bashCommand = "mmgetstate -L -Y"
-    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-    output = process.communicate()[0]
+    dir=executeBashCommand("pwd");
+    executeBashCommand("cd "+args.status.mount);
+    output=executeBashCommand("mmgetstate -LY");
+    executeBashCommand("cd "+dir);
+   
     lines=output.split("\n")
     list=[]
     for line in lines:
@@ -105,6 +119,13 @@ def checkStatus(args):
     totaleNodes=getValueFromList(list,"totalNodes",1)
     
     print("%s %u %u %u %s %s",nodeName,nodeNumber,nodesUp,totalNodes,remarks,quorum)
+    
+    checkResult = {}
+    checkResult["returnCode"] = STATE_CRITICAL
+    checkResult["returnMessage"] = "CRITICAL - No IBM Spectrum Scale Installation detected."
+    checkResult["performanceData"] = ""
+    printMonitoringOutput(checkResult)
+
     
 def checkFileSystems(args):
     """
@@ -140,6 +161,7 @@ def argumentParser():
     statusParser = subParser.add_parser('status', help='Check the gpfs status on this node');
     jobGroup = statusParser.add_mutually_exclusive_group(required=True)
     statusParser.set_defaults(func=checkStatus) 
+    statusParser.add_argument('-m', '--mount', dest='mount', action='store', help='Mount location of the gpfs',required=True)
     
     fileSystemParser = subParser.add_parser('filesystems', help='Check filesystems');
     jobGroup = fileSystemParser.add_mutually_exclusive_group(required=True)
