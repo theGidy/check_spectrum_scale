@@ -128,7 +128,7 @@ def checkStatus(args):
         else:
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
-        checkResult["performanceData"] = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
+        checkResult["performanceData"] = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";" + str(quorumNeeded)+ ";;"
     
     if args.nodes:   
         if args.warning > nodesUp:
