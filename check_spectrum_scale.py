@@ -33,7 +33,7 @@
 
 
 ################################################################################
-## Imports
+# # Imports
 ################################################################################
 import argparse
 import sys
@@ -42,18 +42,18 @@ import subprocess
 
 
 ################################################################################
-## Variable definition
+# # Variable definition
 ################################################################################
-STATE_OK=0
-STATE_WARNING=1
-STATE_CRITICAL=2
-STATE_UNKNOWN=3
+STATE_OK = 0
+STATE_WARNING = 1
+STATE_CRITICAL = 2
+STATE_UNKNOWN = 3
 
 
 ################################################################################
-## Function definition
+# # Function definition
 ################################################################################
-def getValueFromList(list,header,row):
+def getValueFromList(list, header, row):
     """
     Args:
         list     -     list with first line header and following lines data
@@ -63,7 +63,7 @@ def getValueFromList(list,header,row):
         Value from the given list
     """
     print()
-    col=list.index(header)
+    col = list.index(header)
     
     return list[col][row]
 
@@ -95,36 +95,61 @@ def checkRequirments():
 
 def checkStatus(args):
     """
-    Check following settings:
+    Check depending on the arguments following settings:
         - gpfs status
         - quorum status
         - how many nodes are online
-        - 
     """
-    dir=executeBashCommand("pwd");
-    executeBashCommand("cd "+args.status.mount);
-    output=executeBashCommand("mmgetstate -LY");
-    executeBashCommand("cd "+dir);
+    checkResult = {}
+    dir = executeBashCommand("pwd");
+    executeBashCommand("cd " + args.status.mount);
+    output = executeBashCommand("mmgetstate -LY");
+    executeBashCommand("cd " + dir);
    
-    lines=output.split("\n")
-    list=[]
+    lines = output.split("\n")
+    list = []
     for line in lines:
         list.append(line.split(":"))     
     
-    state=getValueFromList(list,"remarks",1)
-    quorum=getValueFromList(list,"quorum",1)
-    nodeName=getValueFromList(list,"nodeName",1)
-    nodeNumber=getValueFromList(list,"nodeNumber",1)
-    nodesUp=getValueFromList(list,"nodesUp",1)
-    totaleNodes=getValueFromList(list,"totalNodes",1)
+    state = getValueFromList(list, "state", 1)
+    quorum = getValueFromList(list, "quorum", 1)
+    nodeName = getValueFromList(list, "nodeName", 1)
+    nodeNumber = getValueFromList(list, "nodeNumber", 1)
+    nodesUp = getValueFromList(list, "nodesUp", 1)
+    totalNodes = getValueFromList(list, "totalNodes", 1)
+       
+       
+    if args.quorum: 
+        if quorum < (totalNodes / 2) + 1:   
+            checkResult["returnCode"] = STATE_CRITICAL
+            checkResult["returnMessage"] = "Critical - GPFS is ReadOnly because not enougth quorum (" + quorum + "/" + ((totalNodes / 2) + 1) + ") nodes are online!"
+       
+        else:
+            checkResult["returnCode"] = STATE_OK
+            checkResult["returnMessage"] = "OK - (" + quorum + "/" + ((totalNodes / 2) + 1) + ") nodes are online!"
     
-    print("%s %u %u %u %s %s",nodeName,nodeNumber,nodesUp,totalNodes,remarks,quorum)
-    
-    checkResult = {}
-    checkResult["returnCode"] = STATE_CRITICAL
-    checkResult["returnMessage"] = "CRITICAL - No IBM Spectrum Scale Installation detected."
-    checkResult["performanceData"] = ""
+    if args.node:   
+        if args.warning > nodesUp:
+            checkResult["returnCode"] = STATE_WARNING
+            checkResult["returnMessage"] = "Warning - Less than" + nodeUp + " Nodes are up."
+        elif args.critical > nodesUp:
+            checkResult["returnCode"] = STATE_CRITICAL
+            checkResult["returnMessage"] = "Critical - Less than" + nodeUp + " Nodes are up."
+        else:
+            checkResult["returnCode"] = STATE_OK
+            checkResult["returnMessage"] = "OK - " + nodeName + " "
+                
+    if not(args.node) and not(quorum):                
+        if not(sate == "active"):
+            checkResult["returnCode"] = STATE_CRITICAL
+            checkResult["returnMessage"] = "Critical - Node" + nodeName + " is in state:" + state
+        else:
+            checkResult["returnCode"] = STATE_OK
+            checkResult["returnMessage"] = "OK - Node" + nodeName + " is in state:" + state
+        
+    checkResult["performanceData"] = "nodesUp=" + nodeUp + ";" + args.warning + ";" + args.critical + ";; totalNodes=" + totalNodes + " nodesDown=" + (totalNodes - nodesUp) + " quorumUp=" + quorum + ";" + ((totalNodes / 2) + 1) + ";;;"
     printMonitoringOutput(checkResult)
+        
 
     
 def checkFileSystems(args):
@@ -159,24 +184,26 @@ def argumentParser():
     subParser = parser.add_subparsers()
     
     statusParser = subParser.add_parser('status', help='Check the gpfs status on this node');
-    jobGroup = statusParser.add_mutually_exclusive_group(required=True)
     statusParser.set_defaults(func=checkStatus) 
-    statusParser.add_argument('-m', '--mount', dest='mount', action='store', help='Mount location of the gpfs',required=True)
+    # maybe not neccesarry
+    statusParser.add_argument('-m', '--mount', dest='mount', action='store', help='Mount location of the gpfs', required=True)
+    statusParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if online nodes below this value (default=5)', default=5)
+    statusParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if online nodes below this value (default=3)', default=3)
+    statusGroup = statusParser.add_mutually_exclusive_group(required=True)
+    # TODO: Disk quorum
+    statusGroup.add_argument('-q', '--quorum', dest='quorum', action='store_true', help='Check the quorum status, will critical if it is less than totalNodes/2+1')
+    statusGroup.add_argument('-n', '--nodes', dest='nodes', action='store_true', help='Check state of the nodes')
     
-    fileSystemParser = subParser.add_parser('filesystems', help='Check filesystems');
-    jobGroup = fileSystemParser.add_mutually_exclusive_group(required=True)
+    fileSystemParser = subParser.add_parser('filesystems', help='Check filesystems')
     fileSystemParser.set_defaults(func=checkFileSystems) 
-    
-    filesetParser = subParser.add_parser('filesets', help='Check the filesets');
-    jobGroup = filesetParser.add_mutually_exclusive_group(required=True)
+     
+    filesetParser = subParser.add_parser('filesets', help='Check the filesets')
     filesetParser.set_defaults(func=checkFileSets) 
-    
+     
     poolsParser = subParser.add_parser('pools', help='Check the pools');
-    jobGroup = poolsParser.add_mutually_exclusive_group(required=True)
     poolsParser.set_defaults(func=checkPools) 
-    
+     
     quotaParser = subParser.add_parser('quota', help='Check the quota');
-    jobGroup = quotaParser.add_mutually_exclusive_group(required=True)
     quotaParser.set_defaults(func=checkQuota)    
 
     return parser
@@ -199,10 +226,10 @@ def printMonitoringOutput(checkResult):
         sys.exit(2)
         
 ################################################################################
-## Main 
+# # Main 
 ################################################################################
 if __name__ == '__main__':
-    checkRequirments()
+   # checkRequirments()
     parser = argumentParser()
     args = parser.parse_args()
     # print parser.parse_args()
