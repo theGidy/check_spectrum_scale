@@ -63,7 +63,7 @@ def getValueFromList(list, header, row):
         Value from the given list
     """
     print()
-    col = list.index(header)
+    col = list[0].index(header)
     
     return list[col][row]
 
@@ -118,36 +118,37 @@ def checkStatus(args):
     nodesUp = getValueFromList(list, "nodesUp", 1)
     totalNodes = getValueFromList(list, "totalNodes", 1)
        
-       
+    quorumNeeded=((eval(totalNodes) / 2) + 1)
+    
     if args.quorum: 
-        if quorum < (totalNodes / 2) + 1:   
+        if quorum < quorumNeeded :   
             checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - GPFS is ReadOnly because not enougth quorum (" + quorum + "/" + ((totalNodes / 2) + 1) + ") nodes are online!"
+            checkResult["returnMessage"] = "Critical - GPFS is ReadOnly because not enougth quorum (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
        
         else:
             checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - (" + quorum + "/" + ((totalNodes / 2) + 1) + ") nodes are online!"
+            checkResult["returnMessage"] = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
     
     if args.node:   
         if args.warning > nodesUp:
             checkResult["returnCode"] = STATE_WARNING
-            checkResult["returnMessage"] = "Warning - Less than" + nodeUp + " Nodes are up."
+            checkResult["returnMessage"] = "Warning - Less than" + str(nodeUp) + " Nodes are up."
         elif args.critical > nodesUp:
             checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - Less than" + nodeUp + " Nodes are up."
+            checkResult["returnMessage"] = "Critical - Less than" + str(nodeUp) + " Nodes are up."
         else:
             checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - " + nodeName + " "
+            checkResult["returnMessage"] = "OK - " + str(nodeName) + " "
                 
     if not(args.node) and not(quorum):                
         if not(sate == "active"):
             checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - Node" + nodeName + " is in state:" + state
+            checkResult["returnMessage"] = "Critical - Node" + str(nodeName) + " is in state:" + str(state)
         else:
             checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - Node" + nodeName + " is in state:" + state
+            checkResult["returnMessage"] = "OK - Node" + str(nodeName) + " is in state:" + str(state)
         
-    checkResult["performanceData"] = "nodesUp=" + nodeUp + ";" + args.warning + ";" + args.critical + ";; totalNodes=" + totalNodes + " nodesDown=" + (totalNodes - nodesUp) + " quorumUp=" + quorum + ";" + ((totalNodes / 2) + 1) + ";;;"
+    checkResult["performanceData"] = "nodesUp=" + str(nodeUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(totalNodes - nodesUp) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
     printMonitoringOutput(checkResult)
         
 
