@@ -128,6 +128,7 @@ def checkStatus(args):
         else:
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
+        checkResult["performanceData"] = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
     
     if args.nodes:   
         if args.warning > nodesUp:
@@ -138,7 +139,8 @@ def checkStatus(args):
             checkResult["returnMessage"] = "Critical - Less than" + str(nodesUp) + " Nodes are up."
         else:
             checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - " + str(nodeName) + " "
+            checkResult["returnMessage"] = "OK - " + str(nodesUp) + " Nodes are up."
+        checkResult["performanceData"] = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown)
                 
     if args.status:                
         if not(state == "active"):
@@ -147,8 +149,9 @@ def checkStatus(args):
         else:
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - Node" + str(nodeName) + " is in state:" + str(state)
+        checkResult["performanceData"] = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
         
-    checkResult["performanceData"] = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
+   
     printMonitoringOutput(checkResult)
         
 
