@@ -117,6 +117,7 @@ def checkStatus(args):
     nodeNumber = getValueFromList(list, "nodeNumber", 1)
     nodesUp = getValueFromList(list, "nodesUp", 1)
     totalNodes = getValueFromList(list, "totalNodes", 1)
+    nodesDown=eval(totalNodes) - eval(nodesUp)
        
     quorumNeeded=((eval(totalNodes) / 2) + 1)
     
@@ -132,10 +133,10 @@ def checkStatus(args):
     if args.node:   
         if args.warning > nodesUp:
             checkResult["returnCode"] = STATE_WARNING
-            checkResult["returnMessage"] = "Warning - Less than" + str(nodeUp) + " Nodes are up."
+            checkResult["returnMessage"] = "Warning - Less than" + str(nodesUp) + " Nodes are up."
         elif args.critical > nodesUp:
             checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - Less than" + str(nodeUp) + " Nodes are up."
+            checkResult["returnMessage"] = "Critical - Less than" + str(nodesUp) + " Nodes are up."
         else:
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - " + str(nodeName) + " "
@@ -148,7 +149,7 @@ def checkStatus(args):
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - Node" + str(nodeName) + " is in state:" + str(state)
         
-    checkResult["performanceData"] = "nodesUp=" + str(nodeUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(totalNodes - nodesUp) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
+    checkResult["performanceData"] = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
     printMonitoringOutput(checkResult)
         
 
@@ -230,7 +231,7 @@ def printMonitoringOutput(checkResult):
 # # Main 
 ################################################################################
 if __name__ == '__main__':
-   # checkRequirments()
+    checkRequirments()
     parser = argumentParser()
     args = parser.parse_args()
     # print parser.parse_args()
