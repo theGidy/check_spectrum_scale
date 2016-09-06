@@ -100,11 +100,8 @@ def checkStatus(args):
         - how many nodes are online
     """
     checkResult = {}
-    dir = os.getcwd()
-    os.chdir(args.mount)
     output = executeBashCommand("mmgetstate -LY")
-    os.chdir(dir)
-   
+    
     lines = output.split("\n")
     list = []
     for line in lines:
@@ -189,8 +186,6 @@ def argumentParser():
     
     statusParser = subParser.add_parser('status', help='Check the gpfs status on this node');
     statusParser.set_defaults(func=checkStatus) 
-    # maybe not neccesarry
-    statusParser.add_argument('-m', '--mount', dest='mount', action='store', help='Mount location of the gpfs', required=True)
     statusParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if online nodes below this value (default=5)', default=5)
     statusParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if online nodes below this value (default=3)', default=3)
     statusGroup = statusParser.add_mutually_exclusive_group(required=True)
