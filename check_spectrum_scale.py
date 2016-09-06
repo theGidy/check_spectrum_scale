@@ -141,7 +141,7 @@ def checkStatus(args):
             checkResult["returnMessage"] = "OK - " + str(nodeName) + " "
                 
     if args.status:                
-        if not(sate == "active"):
+        if not(state == "active"):
             checkResult["returnCode"] = STATE_CRITICAL
             checkResult["returnMessage"] = "Critical - Node" + str(nodeName) + " is in state:" + str(state)
         else:
