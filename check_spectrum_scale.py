@@ -62,10 +62,9 @@ def getValueFromList(list, header, row):
     Return:
         Value from the given list
     """
-    print()
     col = list[0].index(header)
     
-    return list[col][row]
+    return list[row][col]
 
 def executeBashCommand(command):
     """
@@ -130,7 +129,7 @@ def checkStatus(args):
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
     
-    if args.node:   
+    if args.nodes:   
         if args.warning > nodesUp:
             checkResult["returnCode"] = STATE_WARNING
             checkResult["returnMessage"] = "Warning - Less than" + str(nodesUp) + " Nodes are up."
@@ -141,7 +140,7 @@ def checkStatus(args):
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - " + str(nodeName) + " "
                 
-    if not(args.node) and not(quorum):                
+    if args.status:                
         if not(sate == "active"):
             checkResult["returnCode"] = STATE_CRITICAL
             checkResult["returnMessage"] = "Critical - Node" + str(nodeName) + " is in state:" + str(state)
@@ -195,6 +194,7 @@ def argumentParser():
     # TODO: Disk quorum
     statusGroup.add_argument('-q', '--quorum', dest='quorum', action='store_true', help='Check the quorum status, will critical if it is less than totalNodes/2+1')
     statusGroup.add_argument('-n', '--nodes', dest='nodes', action='store_true', help='Check state of the nodes')
+    statusGroup.add_argument('-s', '--status', dest='status', action='store_true', help='Check state of this node')
     
     fileSystemParser = subParser.add_parser('filesystems', help='Check filesystems')
     fileSystemParser.set_defaults(func=checkFileSystems) 
