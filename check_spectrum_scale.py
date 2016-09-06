@@ -101,10 +101,10 @@ def checkStatus(args):
         - how many nodes are online
     """
     checkResult = {}
-    dir = executeBashCommand("pwd");
-    executeBashCommand("cd " + args.status.mount);
-    output = executeBashCommand("mmgetstate -LY");
-    executeBashCommand("cd " + dir);
+    dir = os.getcwd()
+    os.chdir(args.mount)
+    output = executeBashCommand("mmgetstate -LY")
+    os.chdir(dir)
    
     lines = output.split("\n")
     list = []
