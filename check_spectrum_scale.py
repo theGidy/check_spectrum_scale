@@ -145,7 +145,7 @@ def checkStatus(args):
             checkResult["returnMessage"] = "Critical - Node" + str(nodeName) + " is in state:" + str(state)
         else:
             checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - Node" + str(nodeName) + " is in state:" + str(state)
+            checkResult["returnMessage"] = "OK - Node " + str(nodeName) + " is in state:" + str(state)
         checkResult["performanceData"] = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
         
    
@@ -204,7 +204,15 @@ def argumentParser():
     poolsParser.set_defaults(func=checkPools) 
      
     quotaParser = subParser.add_parser('quota', help='Check the quota');
-    quotaParser.set_defaults(func=checkQuota)    
+    quotaParser.set_defaults(func=checkQuota)
+    statusParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if quota is over this value (default=90%)', default=5)
+    statusParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if quota is over this value (default=95)', default=3)
+    statusParser.add_argument('-d', '--device', dest='status', action='store', help='Device to check') 
+    statusGroup = statusParser.add_mutually_exclusive_group(required=True)
+    # TODO: Disk quorum
+    statusGroup.add_argument('-f', '--fileset', dest='fileset', action='store', help='Check quota conditions of a fileset')
+    statusGroup.add_argument('-C', '--cluster', dest='cluster', action='store', help='Check quota conditions of a cluster')
+    statusGroup.add_argument('-u', '--user', dest='user', action='store', help='Check quota conditions of a cluster')
 
     return parser
 
