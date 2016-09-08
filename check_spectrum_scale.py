@@ -9,7 +9,7 @@
 ################################################################################
 # Name:    Check IBM Spectrum Scale / GPFS
 # Author:  Philipp Posovszky, DLR - philipp.posovszky@gmail.com
-# Version: 0.0.1
+# Version: 0.1.0
 # Date: 30/08/2016
 # Dependencies:
 #   - IBM Spectrum Scale
@@ -120,20 +120,19 @@ def checkStatus(args):
     if args.quorum: 
         if quorum < quorumNeeded :   
             checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - GPFS is ReadOnly because not enougth quorum (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
-       
+            checkResult["returnMessage"] = "Critical - GPFS is ReadOnly because not enougth quorum (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"  
         else:
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
         checkResult["performanceData"] = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";" + str(quorumNeeded)+ ";;"
     
     if args.nodes:   
-        if args.warning > nodesUp:
+        if args.critical > nodesUp:
             checkResult["returnCode"] = STATE_WARNING
-            checkResult["returnMessage"] = "Warning - Less than" + str(nodesUp) + " Nodes are up."
-        elif args.critical > nodesUp:
+            checkResult["returnMessage"] = "Critical - Only " + str(nodesUp)+"/"+str(totalNodes) + " Nodes are up."
+        elif args.warning > nodesUp:
             checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - Less than" + str(nodesUp) + " Nodes are up."
+            checkResult["returnMessage"] = "Warning - Only " + str(nodesUp)+"/"+str(totalNodes) + " Nodes are up."
         else:
             checkResult["returnCode"] = STATE_OK
             checkResult["returnMessage"] = "OK - " + str(nodesUp) + " Nodes are up."
@@ -172,6 +171,9 @@ def checkQuota(args):
     """
     
     """
+    checkResult = {}
+    
+    printMonitoringOutput(checkResult)
 
 
 def argumentParser():
@@ -208,11 +210,11 @@ def argumentParser():
     quotaParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if quota is over this value (default=90%)', default=5)
     quotaParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if quota is over this value (default=95)', default=3)
     quotaParser.add_argument('-d', '--device', dest='status', action='store', help='Device to check') 
-    quotGroup = statusParser.add_mutually_exclusive_group(required=True)
+    quotaGroup = quotaParser.add_mutually_exclusive_group(required=True)
     # TODO: Disk quorum
-    quotGroup.add_argument('-f', '--fileset', dest='fileset', action='store', help='Check quota conditions of a fileset')
-    quotGroup.add_argument('-C', '--cluster', dest='cluster', action='store', help='Check quota conditions of a cluster')
-    quotGroup.add_argument('-u', '--user', dest='user', action='store', help='Check quota conditions of a cluster')
+    quotaGroup.add_argument('-f', '--fileset', dest='fileset', action='store', help='Check quota conditions of a fileset')
+    quotaGroup.add_argument('-C', '--cluster', dest='cluster', action='store', help='Check quota conditions of a cluster')
+    quotaGroup.add_argument('-u', '--user', dest='user', action='store', help='Check quota conditions of a cluster')
 
     return parser
 
