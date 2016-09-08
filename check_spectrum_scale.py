@@ -127,11 +127,11 @@ def checkStatus(args):
         checkResult["performanceData"] = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";" + str(quorumNeeded)+ ";;"
     
     if args.nodes:   
-        if args.critical > nodesUp:
-            checkResult["returnCode"] = STATE_WARNING
-            checkResult["returnMessage"] = "Critical - Only " + str(nodesUp)+"/"+str(totalNodes) + " Nodes are up."
-        elif args.warning > nodesUp:
+        if args.critical >= nodesUp:
             checkResult["returnCode"] = STATE_CRITICAL
+            checkResult["returnMessage"] = "Critical - Only " + str(nodesUp)+"/"+str(totalNodes) + " Nodes are up."
+        elif args.warning >= nodesUp:
+            checkResult["returnCode"] = STATE_WARNING
             checkResult["returnMessage"] = "Warning - Only " + str(nodesUp)+"/"+str(totalNodes) + " Nodes are up."
         else:
             checkResult["returnCode"] = STATE_OK
