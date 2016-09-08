@@ -205,14 +205,14 @@ def argumentParser():
      
     quotaParser = subParser.add_parser('quota', help='Check the quota');
     quotaParser.set_defaults(func=checkQuota)
-    statusParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if quota is over this value (default=90%)', default=5)
-    statusParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if quota is over this value (default=95)', default=3)
-    statusParser.add_argument('-d', '--device', dest='status', action='store', help='Device to check') 
-    statusGroup = statusParser.add_mutually_exclusive_group(required=True)
+    quotaParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if quota is over this value (default=90%)', default=5)
+    quotaParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if quota is over this value (default=95)', default=3)
+    quotaParser.add_argument('-d', '--device', dest='status', action='store', help='Device to check') 
+    quotGroup = statusParser.add_mutually_exclusive_group(required=True)
     # TODO: Disk quorum
-    statusGroup.add_argument('-f', '--fileset', dest='fileset', action='store', help='Check quota conditions of a fileset')
-    statusGroup.add_argument('-C', '--cluster', dest='cluster', action='store', help='Check quota conditions of a cluster')
-    statusGroup.add_argument('-u', '--user', dest='user', action='store', help='Check quota conditions of a cluster')
+    quotGroup.add_argument('-f', '--fileset', dest='fileset', action='store', help='Check quota conditions of a fileset')
+    quotGroup.add_argument('-C', '--cluster', dest='cluster', action='store', help='Check quota conditions of a cluster')
+    quotGroup.add_argument('-u', '--user', dest='user', action='store', help='Check quota conditions of a cluster')
 
     return parser
 
