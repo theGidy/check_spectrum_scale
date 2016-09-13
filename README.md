@@ -36,4 +36,36 @@ OK - Node gpfs-node1.test.de is in state:active|nodesUp=3;5;3;; totalNodes=3 nod
 
 ##Quota
 
+This check will test if some quota is above 95/97% percent of saturation for the fileSystem Processing_1
+<code>
+./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97
+WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
+</code>
+
+
+This check will test if some quota is above 95/97% percent of saturation for the fileSystem Processing_1 and fileset largeHome
+<code>
+./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97 -fs largeHome
+WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
+</code>
+
+
+This check will test if some quota is above 95/97% percent of saturation for the user "user1"
+<code>
+./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97 -fs largeHome
+WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
+</code>
+
+This check will test if some quota is above 95/97% percent of utilization for the user "user1"
+<code>
+./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97 -fs largeHome -n "user1"
+OK - No Violations detected|blockViolation=0 blockCritical=0 fileViolation=0 fileCritical=0
+</code>
+
+
+This check will test if some quota is above 95/97% percent of utilization for the group "admins"
+<code>
+./check_spectrum_scale.py quota -w 95 -c 97 -f Processing_1 -n admins -t g
+OK - No Violations detected|blockViolation=0 blockCritical=0 fileViolation=0 fileCritical=0
+</code>
 

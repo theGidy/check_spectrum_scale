@@ -9,7 +9,7 @@
 ################################################################################
 # Name:    Check IBM Spectrum Scale / GPFS
 # Author:  Philipp Posovszky, DLR - philipp.posovszky@gmail.com
-# Version: 0.1.0
+# Version: 0.2.0
 # Date: 30/08/2016
 # Dependencies:
 #   - IBM Spectrum Scale
@@ -41,6 +41,7 @@ import os
 import subprocess
 
 
+
 ################################################################################
 # # Variable definition
 ################################################################################
@@ -50,6 +51,85 @@ STATE_CRITICAL = 2
 STATE_UNKNOWN = 3
 
 
+
+################################################################################
+# # Class definition
+################################################################################
+        
+
+class CheckResult:
+    """Simple storage class for return values of the script"""
+    
+        
+    def __init__(self, returnCode=None, returnMessage=None, performanceData=None, longOutput=None):
+        
+        if returnCode is None:
+            self.returnCode = STATE_UNKNOWN
+        else:
+            self.returnCode = returnCode
+            
+        if returnMessage is None:
+            self.returnMessage = "UNKNOWN"
+        else:
+            self.returnMessage = returnMessage
+            
+        if performanceData is None:
+            self.performanceData = None
+        else:
+            self.performanceData = performanceData
+         
+        if longOutput is None:
+            self.longOutput = None
+        else:
+            self.longOutput = longOutput    
+
+    def printMonitoringOutput(self):
+        """
+        Print the result message with the performanceData,longOutput for the monitoring tool Nagios/Icinga with the given returnCode state.
+    
+        Error:
+            Prints unknown state if the all variables in the instance are default.
+        """
+        returnText = self.returnMessage
+        if self.performanceData is not None:
+            returnText = returnText + "|" + self.performanceData
+        if self.longOutput is not None:
+            returnText = returnText + "\n" + self.longOutput
+            
+        print(returnText)
+        sys.exit(self.returnCode)
+
+class QuotaObject:
+    """
+    Simple class whitch holds the name,type of a Violation and the corrosponding boolean values for block/File violation
+    """
+    
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+        self.blockViolation = False
+        self.fileViolation = False
+        self.fileCritical = False
+        self.blockCritical = False
+        
+    def isVioliation(self):
+        """
+        Returns: true if block or file violation flag is set
+        """
+        return self.blockViolation or self.fileViolation
+    
+    def isCritical(self):
+        """
+        Returns: true if block or file critical flag is set
+        """
+        return self.blockCritical or self.fileCritical
+    
+    def __str__(self):
+        """
+        Returns: the string of the class"""
+        return "[name: " + self.name + ", type: " + self.type + ", blockViolation: " + str(self.blockViolation) + ", blockCritical: " + str(self.blockCritical) + ", fileViolation: " + str(self.fileViolation) + ", fileCritical: " + str(self.fileCritical) + "]"
+    
+    
 ################################################################################
 # # Function definition
 ################################################################################
@@ -63,7 +143,7 @@ def getValueFromList(list, header, row):
         Value from the given list
     """
     col = list[0].index(header)
-    
+
     return list[row][col]
 
 def executeBashCommand(command):
@@ -77,7 +157,8 @@ def executeBashCommand(command):
     
     process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
     return process.communicate()[0]
-
+    
+    
 def checkRequirments():
     """
     Check if following tools are installed on the system:
@@ -85,11 +166,11 @@ def checkRequirments():
     """
 
     if not (os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate")):
-        checkResult = {}
-        checkResult["returnCode"] = STATE_CRITICAL
-        checkResult["returnMessage"] = "CRITICAL - No IBM Spectrum Scale Installation detected."
-        checkResult["performanceData"] = ""
-        printMonitoringOutput(checkResult)       
+        checkResult = CheckResult()
+        checkResult.returnCode = STATE_CRITICAL
+        checkResult.returnMessage = "CRITICAL - No IBM Spectrum Scale Installation detected."
+        checkResult.performanceData = ""
+        checkReuslt.printMonitoringOutput()     
     
 
 def checkStatus(args):
@@ -99,7 +180,7 @@ def checkStatus(args):
         - quorum status
         - how many nodes are online
     """
-    checkResult = {}
+    checkResult = CheckResult()
     output = executeBashCommand("mmgetstate -LY")
     
     lines = output.split("\n")
@@ -113,44 +194,43 @@ def checkStatus(args):
     nodeNumber = getValueFromList(list, "nodeNumber", 1)
     nodesUp = getValueFromList(list, "nodesUp", 1)
     totalNodes = getValueFromList(list, "totalNodes", 1)
-    nodesDown=eval(totalNodes) - eval(nodesUp)
+    nodesDown = eval(totalNodes) - eval(nodesUp)
        
-    quorumNeeded=((eval(totalNodes) / 2) + 1)
+    quorumNeeded = ((eval(totalNodes) / 2) + 1)
     
     if args.quorum: 
         if quorum < quorumNeeded :   
-            checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - GPFS is ReadOnly because not enougth quorum (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"  
+            checkResult.returnCode = STATE_CRITICAL
+            checkResult.returnMessage = "Critical - GPFS is ReadOnly because not enougth quorum (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"  
         else:
-            checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
-        checkResult["performanceData"] = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";" + str(quorumNeeded)+ ";;"
+            checkResult.returnCode = STATE_OK
+            checkResult.returnMessage = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
+        checkResult.performanceData = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded) + ";" + str(quorumNeeded) + ";;"
     
     if args.nodes:   
         if args.critical >= nodesUp:
-            checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - Only " + str(nodesUp)+"/"+str(totalNodes) + " Nodes are up."
+            checkResult.returnCode = STATE_CRITICAL
+            checkResult.returnMessage = "Critical - Only " + str(nodesUp) + "/" + str(totalNodes) + " Nodes are up."
         elif args.warning >= nodesUp:
-            checkResult["returnCode"] = STATE_WARNING
-            checkResult["returnMessage"] = "Warning - Only " + str(nodesUp)+"/"+str(totalNodes) + " Nodes are up."
+            checkResult.returnCode = STATE_WARNING
+            checkResult.returnMessage = "Warning - Only " + str(nodesUp) + "/" + str(totalNodes) + " Nodes are up."
         else:
-            checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - " + str(nodesUp) + " Nodes are up."
-        checkResult["performanceData"] = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown)
+            checkResult.returnCode = STATE_OK
+            checkResult.returnMessage = "OK - " + str(nodesUp) + " Nodes are up."
+        checkResult.performanceData = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown)
                 
     if args.status:                
         if not(state == "active"):
-            checkResult["returnCode"] = STATE_CRITICAL
-            checkResult["returnMessage"] = "Critical - Node" + str(nodeName) + " is in state:" + str(state)
+            checkResult.returnCode = STATE_CRITICAL
+            checkResult.returnMessage = "Critical - Node" + str(nodeName) + " is in state:" + str(state)
         else:
-            checkResult["returnCode"] = STATE_OK
-            checkResult["returnMessage"] = "OK - Node " + str(nodeName) + " is in state:" + str(state)
-        checkResult["performanceData"] = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded)+ ";;;"
+            checkResult.returnCode = STATE_OK
+            checkResult.returnMessage = "OK - Node " + str(nodeName) + " is in state:" + str(state)
+        checkResult.performanceData = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded) + ";;;"
         
    
-    printMonitoringOutput(checkResult)
+    checkResult.printMonitoringOutput()
         
-
     
 def checkFileSystems(args):
     """
@@ -169,11 +249,137 @@ def checkPools(args):
     
 def checkQuota(args):
     """
-    
+        Check depending on the arguments following settings:
+        - quota on filesets
+        - quota on cluster
+        - quota per users
     """
-    checkResult = {}
+    checkResult = CheckResult()
+    command = "mmrepquota -Y " 
+    if args.type:
+        command += "-" + args.type
+  
+    command += " " + args.filesystem
     
-    printMonitoringOutput(checkResult)
+    if args.fileset:
+        command += ":" + args.fileset
+  
+    
+    output = executeBashCommand(command)
+    lines = output.split("\n")
+    list = []
+    for line in lines:
+        list.append(line.split(":"))
+    # Clear uneccesary last line 
+    list.remove(list[-1])
+
+
+    resultList = []
+    for i in list:
+        idx = list.index(i)
+        # Skipp header
+        if idx > 0:
+            name = getValueFromList(list, "name", idx)
+            quota = getValueFromList(list, "quota", idx)
+            type = getValueFromList(list, "quotaType", idx)
+            filesetname = getValueFromList(list, "filesetname", idx)
+            blockUsage = eval(getValueFromList(list, "blockUsage", idx))
+            blockQuota = eval(getValueFromList(list, "blockQuota", idx))
+            fileUsage = eval(getValueFromList(list, "filesUsage", idx))
+            fileQuota = eval(getValueFromList(list, "filesQuota", idx))
+            
+            warningValue = blockQuota * (float(args.warning) / 100.0)
+            criticalValue = blockQuota * (float(args.critical) / 100.0)
+        
+            quotaObject = QuotaObject(name, type)
+
+            # Check Block Quota
+            if blockUsage > criticalValue and blockQuota != 0:
+                quotaObject.blockViolation = True 
+                quotaObject.blockCritical = True
+              
+            if blockUsage > warningValue and blockQuota != 0:
+                quotaObject.blockViolation = True
+                
+            # Check file quota
+            warningValue = fileQuota * (float(args.warning) / 100.0)
+            criticalValue = fileQuota * (float(args.critical) / 100.0)
+            if fileUsage > criticalValue and blockQuota != 0:
+                quotaObject.fileCritical = True 
+                quotaObject.fileViolation = True 
+                
+            if fileUsage > warningValue and blockQuota != 0:
+                quotaObject.fileViolation = True 
+                
+            if quotaObject.isVioliation():
+                resultList.append(quotaObject)
+    #Filter for single user/grp request
+    if args.name != None:   
+        resultList=[x for x in resultList if x.name==args.name]
+        
+    blockViolation = len([x for x in resultList if x.blockViolation == True and x.blockCritical == False])
+    fileViolation = len([x for x in resultList if x.fileViolation == True and x.fileCritical == False])
+    blockCritical = len([x for x in resultList if x.blockCritical == True])
+    fileCritical = len([x for x in resultList if x.fileCritical == True])
+    
+    checkResult = CheckResult()
+    
+    checkResult.performanceData = "blockViolation=" + str(blockViolation) + " blockCritical=" + str(blockCritical) + " fileViolation=" + str(fileViolation) + " fileCritical=" + str(fileCritical);
+    if args.longOutput:
+            userListBlockCritical = []
+            userListFileCritical = []
+            userListBlock = []
+            userListFile = []
+
+            for user in  [x for x in resultList if x.type == "USR"]:
+                if user.blockViolation and user.blockCritical:
+                    userListBlockCritical.append(user.name)
+                elif user.blockViolation:
+                    userListBlock.append(user.name)
+                
+                if user.fileViolation and user.fileCritical:
+                    userListFileCritical.append(user.name)
+                elif user.fileViolation:
+                    userListFile.append(user.name)
+                    
+            groupListBlockCritical = []
+            groupListFileCritical = []
+            groupListBlock = []
+            groupListFile = []
+            
+            for group in [x for x in resultList if x.type == "GRP"]:
+                if group.blockViolation and group.blockCritical:
+                    groupListBlockCritical.append(group.name)
+                elif group.blockViolation:
+                    groupListBlock.append(group.name)
+                
+                if group.fileViolation and group.fileCritical:
+                    groupListFileCritical.append(group.name)
+                elif group.fileViolation:
+                    groupListFile.append(group.name)
+            
+            checkResult.longOutput = "User Block: " + ", ".join(userListBlock) + "\n"   
+            checkResult.longOutput += "User Block Critical: " + ", ".join(userListBlockCritical) + "\n"
+            checkResult.longOutput += "User File: " + ", ".join(userListBlockCritical) + "\n"  
+            checkResult.longOutput += "User File Critical: " + ", ".join(userListBlockCritical) + "\n"
+            checkResult.longOutput += "Group Block: " + ", ".join(groupListBlock) + "\n"   
+            checkResult.longOutput += "Group Block Critical: " + ", ".join(groupListBlockCritical) + "\n"
+            checkResult.longOutput += "Group File: " + ", ".join(groupListBlockCritical) + "\n"  
+            checkResult.longOutput += "Group File Critical: " + ", ".join(groupListBlockCritical)     
+    if blockViolation > 0 and blockCritical > 0 or fileViolation > 0 and fileViolation > 0:
+        
+        checkResult.returnCode = STATE_CRITICAL
+        checkResult.returnMessage = "Critical - Block Critical: "+ str(blockCritical)+" File Critical: "+ str(fileCritical)
+        
+    elif blockViolation > 0 or fileViolation > 0:
+        checkResult.returnCode = STATE_WARNING
+        checkResult.returnMessage = "WARNING - Block: "+ str(blockViolation)+" File: "+ str(fileViolation)
+    else:
+        checkResult.returnCode = STATE_OK
+        checkResult.returnMessage = "OK - No Violations detected"
+
+
+    checkResult.printMonitoringOutput()
 
 
 def argumentParser():
@@ -183,13 +389,14 @@ def argumentParser():
     parser = argparse.ArgumentParser(description='Check status of the gpfs filesystem')
     group = parser.add_argument_group();
     group.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
-    
+  
     subParser = parser.add_subparsers()
     
     statusParser = subParser.add_parser('status', help='Check the gpfs status on this node');
     statusParser.set_defaults(func=checkStatus) 
     statusParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if online nodes below this value (default=5)', default=5)
     statusParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if online nodes below this value (default=3)', default=3)
+    statusParser.add_argument('-L', '--Long', dest='longOutput', action='store_true', help='Displaies additional informations in the long output', default=False)
     statusGroup = statusParser.add_mutually_exclusive_group(required=True)
     # TODO: Disk quorum
     statusGroup.add_argument('-q', '--quorum', dest='quorum', action='store_true', help='Check the quorum status, will critical if it is less than totalNodes/2+1')
@@ -205,35 +412,19 @@ def argumentParser():
     poolsParser = subParser.add_parser('pools', help='Check the pools');
     poolsParser.set_defaults(func=checkPools) 
      
-    quotaParser = subParser.add_parser('quota', help='Check the quota');
+    quotaParser = subParser.add_parser('quota', help='Check the quota on a filesystem');
     quotaParser.set_defaults(func=checkQuota)
-    quotaParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if quota is over this value (default=90%)', default=5)
-    quotaParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if quota is over this value (default=95)', default=3)
-    quotaParser.add_argument('-d', '--device', dest='status', action='store', help='Device to check') 
-    quotaGroup = quotaParser.add_mutually_exclusive_group(required=True)
-    # TODO: Disk quorum
-    quotaGroup.add_argument('-f', '--fileset', dest='fileset', action='store', help='Check quota conditions of a fileset')
-    quotaGroup.add_argument('-C', '--cluster', dest='cluster', action='store', help='Check quota conditions of a cluster')
-    quotaGroup.add_argument('-u', '--user', dest='user', action='store', help='Check quota conditions of a cluster')
-
+    quotaParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if quota is over this value (default=90 percent)', default=90)
+    quotaParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if quota is over this value (default=95 percent)', default=96)
+    quotaParser.add_argument('-f', '--filesystem', dest='filesystem', action='store', help='FileSystem to Check to quota per fileset', required=True) 
+    quotaParser.add_argument('-fs', '--fileset', dest='fileset', action='store', help='Check quota  for a fileset')
+    quotaParser.add_argument('-n', '--name', dest='name', action='store', help='Check quota for an user/group')
+    quotaParser.add_argument('-t', '--type', dest='type', choices=['u', 'g'], help='Check only user other group quota')
+    quotaParser.add_argument('-L', '--Long', dest='longOutput', action='store_true', help='Shows additional informations in a long output', default=False)
+   # quotaParser.add_argument('-b', '--blockunit', dest='unit', choices=['MB', 'GB', 'TB', 'PB', 'EB', 'ZB'], default='TB', help='display unit [default=TB]')
+    
     return parser
 
-def printMonitoringOutput(checkResult):
-    """
-    Print the result message with the performanceData for the monitoring tool with the given returnCode state.
-    
-    Args:
-        checkResult: HashArray with returnMessage, perfomranceData and returnCode
-    
-    Error:
-        Prints critical state if the parsed checkResult argument is empty.
-    """
-    if checkResult != None:
-        print(checkResult["returnMessage"] + "|" + checkResult["performanceData"])
-        sys.exit(checkResult["returnCode"])
-    else:
-        print("Critical - Error in Script")
-        sys.exit(2)
         
 ################################################################################
 # # Main 
@@ -244,10 +435,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # print parser.parse_args()
     args.func(args)
-    
-    checkResult = {}
-    checkResult["returnCode"] = STATE_UNKNOWN
-    checkResult["returnMessage"] = "UNKNOWN - No parameters are passed!"
-    checkResult["performanceData"] = ""
-    printMonitoringOutput(checkResult)
-
