@@ -44,7 +44,7 @@ OK - Node gpfs-node1.test.de is in state:active|nodesUp=3;5;3;; totalNodes=3 nod
 ##Pools
 
 ##Check all pools
-This check will test if some pool is above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a longoutput
+This check will test if some pool are above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a long output
 
 
 <code>
@@ -57,10 +57,10 @@ Warning Meta Pool:
 </code>
 
 ##Check one or more specific pools
-This check will test if some pool is above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a longoutput
+This check will test if specific pools are above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a long output
 
 <code>
-./check_spectrum_scale.py pool -d Processing_1 -w 95 -c 97 -p Pool_1|Pool_2 -L
+./check_spectrum_scale.py pool -d Processing_1 -w 95 -c 97 -p Pool_1,Pool_2 -L
 Critical - Data Pool: 1 Meta Pool: 0|Data_Pool_2=7261755392;9367607705.6;3747043082.24;;62419992576 Data_Pool_1=2315413504;9367607705.6;3747043082.24;;93676077056 Meta_system=3773308928;0.0;0.0;;3901249536 
 Critical Data Pool: Pool_1
 Warning Data Pool: 
