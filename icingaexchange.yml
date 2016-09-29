@@ -8,8 +8,8 @@ type: Plugin
 license: gplv3
 releases: 
   - 
-    name: 0.2.0
-    description: "0.2.0 Development"
+    name: 0.3.0
+    description: "0.3.0 Development"
     files: 
       - 
         name: check_spectrum_scale.py

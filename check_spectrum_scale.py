@@ -39,6 +39,7 @@ import argparse
 import sys
 import os
 import subprocess
+import re
 
 
 
@@ -98,6 +99,34 @@ class CheckResult:
             
         print(returnText)
         sys.exit(self.returnCode)
+        
+class PoolObject:
+    """
+    Simple class whtich holds the name, 
+    """
+    
+    def __init__(self, name,id,data,meta,dataTotal,dataFree,metaTotal,metaFree):
+        self.name = name
+        self.id = int(id)
+        self.data =(data=='yes')
+        self.meta =(meta=='yes')
+        self.dataTotal=int(dataTotal)
+        self.dataFree=int(dataFree)
+        self.metaTotal=int(metaTotal)
+        self.metaFree=int(metaFree)
+        self.criticalMeta=False;
+        self.criticalData=False;
+        self.warningMeta=False;
+        self.warningData=False;
+        
+    def __str__(self):
+        """
+        Returns: the string of the class"""
+        text="[name: " + self.name + ", id: " + str(self.id) + ", data: " + str(self.data) + ", meta: " + str(self.meta) + ", dataTotal: " + str(self.dataTotal)
+        text+=", dataFree: " + str(self.dataFree) +", metaTotal: " + str(self.metaTotal) + ", metaFree: " + str(self.metaFree)+", warningData: " + str(self.warningData) 
+        text+=", ciritcalData: " + str(self.criticalData) + ", warningMeta: " + str(self.warningMeta) + ", criticalMeta: " + str(self.criticalMeta) +  "]"
+        return text
+    
 
 class QuotaObject:
     """
@@ -250,35 +279,87 @@ def checkPools(args):
         - disk usage single pool
     """
     checkResult = CheckResult()
-    command = "mmlspool -Y -L "  
+    command = "mmlspool"
     command += " " + args.device
     
-    if args.pool:
+    if args.pools:
         command += " " + args.pool
   
     
     output = executeBashCommand(command)
+    output=re.sub(' {1,}',';',output)
+    #print(output)
     lines = output.split("\n")
     list = []
     for line in lines:
-        list.append(line.split(":"))
+        list.append(line.split(";"))
     # Clear uneccesary last line 
+    #print(list)
     list.remove(list[-1])
-
+    list.remove(list[0])
+    #print(list)
 
     resultList = []
     for i in list:
         idx = list.index(i)
         # Skipp header
         if idx > 0:
-            name = getValueFromList(list, "name", idx)
-            quota = getValueFromList(list, "quota", idx)
-            type = getValueFromList(list, "quotaType", idx)
-            filesetname = getValueFromList(list, "filesetname", idx)
-            blockUsage = eval(getValueFromList(list, "blockUsage", idx))
-            blockQuota = eval(getValueFromList(list, "blockQuota", idx))
-            fileUsage = eval(getValueFromList(list, "filesUsage", idx))
-            fileQuota = eval(getValueFromList(list, "filesQuota", idx))
+            poolObject=PoolObject(name=list[idx][0],id=list[idx][1],data=list[idx][4],meta=list[idx][5],dataTotal=list[idx][6],dataFree=list[idx][7],metaTotal=list[idx][10],metaFree=list[idx][11])
+            #if (float((100.0-float(args.warning))*poolObject.dataTotal)>poolObject.dataFree:
+            #print(poolObject.dataFree,poolObject.dataTotal, ((100.0-args.critical)*float(poolObject.dataTotal))/100.0,args.warning)
+            if poolObject.dataFree < calculateValue(args.critical,poolObject.dataTotal):
+                     poolObject.criticalData=True
+            if poolObject.metaFree < calculateValue(args.critical,poolObject.metaTotal):
+                     poolObject.criticalMeta=True
+            if poolObject.dataFree < calculateValue(args.warning,poolObject.dataTotal):
+                     poolObject.warningData=True
+            if poolObject.metaFree < calculateValue(args.warning,poolObject.metaTotal):
+                     poolObject.warningMeta=True
+            resultList.append(poolObject)
+
+    criticalData = [x for x in resultList if x.criticalData == True]
+    warningData = [x for x in resultList if x.warningData == True and x.criticalData == False]
+    criticalMeta = [x for x in resultList if x.criticalMeta == True]
+    warningMeta = [x for x in resultList if x.warningMeta == True and x.ciriticalMeta == False]
+    
+    checkResult = CheckResult()
+    #TODO Function to add performance data for each pool
+    checkResult.performanceData=""
+    for x in [x for x in resultList if x.data==True]:
+        checkResult.performanceData +="Data_"+x.name+"="+str(x.dataFree)+";"+str(calculateValue(args.warning,poolObject.dataTotal))+";"+str(calculateValue(args.critical,poolObject.dataTotal))+";;"+str(x.dataTotal)+" ";
+    for x in [x for x in resultList if x.meta==True]:
+        checkResult.performanceData +="Meta_"+x.name+"="+str(x.metaFree)+";"+str(calculateValue(args.warning,poolObject.metaTotal))+";"+str(calculateValue(args.critical,poolObject.metaTotal))+";;"+str(x.metaTotal)+" ";
+    
+            
+    if len(criticalData) > 0 or len(criticalMeta) > 0 :
+        checkResult.returnCode = STATE_CRITICAL
+        checkResult.returnMessage = "Critical - Data Pool: "+ str( len(criticalData))+" Meta Pool: "+ str(len(criticalMeta))
+        
+    elif len(warningData) > 0 or len(warningMeta) > 0 :
+        checkResult.returnCode = STATE_WARNING
+        checkResult.returnMessage = "Critical - Data Pool: "+ str( len(criticalData))+" Meta Pool: "+ str(len(criticalMeta))
+    else:
+        checkResult.returnCode = STATE_OK
+        checkResult.returnMessage = "OK - All "+len(resultList)+"pools in range"
+
+    if args.longOutput:       
+            criticalData = [x.name for x in resultList if x.criticalData == True]
+            warningData = [x.name for x in resultList if x.warningData == True and x.criticalData == False]
+            criticalMeta = [x.name for x in resultList if x.criticalMeta == True]
+            warningMeta = [x.name for x in resultList if x.warningMeta == True and x.ciriticalMeta == False] 
+            checkResult.longOutput = "Critical Data Pool: " + ", ".join(criticalData) + "\n"   
+            checkResult.longOutput += "Warning Data Pool: " + ", ".join(warningData) + "\n"
+            checkResult.longOutput += "Critical Meta Pool: " + ", ".join(criticalMeta) + "\n"   
+            checkResult.longOutput += "Warning Meta Pool: " + ", ".join(warningMeta) + "\n"
+    checkResult.printMonitoringOutput()
+        
+        
+def calculateValue(value,total):
+    """
+    Return - the warning/critical level of free space
+    """
+    return ((100.0-value)*float(total))/100.0
+
     
 def checkQuota(args):
     """
@@ -449,9 +530,10 @@ def argumentParser():
     poolsParser.set_defaults(func=checkPools) 
     poolsParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if disk usage is over this value (default=90 percent)', default=90)
     poolsParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if disk usage is over this value (default=95 percent)', default=96)
-    poolsParser.add_argument('-t', '--type', dest='type', choices=['m', 'd'], help='Check only meta-disks (m) or data-disks (d)')
+    poolsParser.add_argument('-t', '--type', dest='type', choices=['m', 'd','b'], help='Check meta-disks (m),data-disks (d) or both (b)',default='b')
     poolsParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the disk usage', required=True) 
     poolsParser.add_argument('-p', '--pools', dest='pools', action='store', help='Name of the pool to check (delimiter is | )')
+    poolsParser.add_argument('-L', '--Long', dest='longOutput', action='store_true', help='Displaies additional informations in the long output', default=False)
       
     quotaParser = subParser.add_parser('quota', help='Check the quota on a filesystem');
     quotaParser.set_defaults(func=checkQuota)
