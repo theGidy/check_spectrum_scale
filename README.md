@@ -33,39 +33,48 @@ OK - Node gpfs-node1.test.de is in state:active|nodesUp=3;5;3;; totalNodes=3 nod
 ##FileSet
 
 ##Pools
+This check will test if some pool is above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a longoutput
+<code>
+./check_spectrum_scale.py pool -d Processing_1 -w 95 -c 97 -L
+Critical - Data Pool: 1 Meta Pool: 0|Data_Pool_2=7261755392;9367607705.6;3747043082.24;;62419992576 Data_Pool_1=2315413504;9367607705.6;3747043082.24;;93676077056 Meta_system=3773308928;0.0;0.0;;3901249536 
+Critical Data Pool: Pool_1
+Warning Data Pool: 
+Critical Meta Pool: 
+Warning Meta Pool: 
+</code>
 
 ##Quota
 
 This check will test if some quota is above 95/97% percent of saturation for the fileSystem Processing_1
 <code>
-./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97
+./check_spectrum_scale.py quota -d Processing_1 -w 95 -c 97
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
 
 This check will test if some quota is above 95/97% percent of saturation for the fileSystem Processing_1 and fileset largeHome
 <code>
-./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97 -fs largeHome
+./check_spectrum_scale.py quota -d Processing_1 -w 95 -c 97 -fs largeHome
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
 
 This check will test if some quota is above 95/97% percent of saturation for the user "user1"
 <code>
-./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97 -fs largeHome
+./check_spectrum_scale.py quota -d Processing_1 -w 95 -c 97 -fs largeHome
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
 This check will test if some quota is above 95/97% percent of utilization for the user "user1"
 <code>
-./check_spectrum_scale.py quota -f Processing_1 -w 95 -c 97 -fs largeHome -n "user1"
+./check_spectrum_scale.py quota -d Processing_1 -w 95 -c 97 -fs largeHome -n "user1"
 OK - No Violations detected|blockViolation=0 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
 
 This check will test if some quota is above 95/97% percent of utilization for the group "admins"
 <code>
-./check_spectrum_scale.py quota -w 95 -c 97 -f Processing_1 -n admins -t g
+./check_spectrum_scale.py quota -w 95 -c 97 -d Processing_1 -n admins -t g
 OK - No Violations detected|blockViolation=0 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
