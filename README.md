@@ -14,6 +14,7 @@ This check will be result in warning/critical it are less than warning/critical 
 
 <code>
 ./check_spectrum_scale.py status -n -w 2 -c 1
+
 OK - 3 Nodes are up.|nodesUp=3;5;3;; totalNodes=3 nodesDown=0
 </code>
 
@@ -24,6 +25,7 @@ This check will be result in a critical if less thans n/2+1 quorum nodes are onl
 
 <code>
 ./check_spectrum_scale.py status -q
+
 OK - (2/2) nodes are online!|quorumUp=2;2;2;;
 </code>
 
@@ -34,6 +36,7 @@ This check will be result in a critical if the node is in another state than "ac
 
 <code>
 ./check_spectrum_scale.py status -s
+
 OK - Node gpfs-node1.test.de is in state:active|nodesUp=3;5;3;; totalNodes=3 nodesDown=0 quorumUp=2;2;;;
 </code>
 
@@ -49,6 +52,7 @@ This check will test if some pool are above 95/97% percent of saturation for the
 
 <code>
 ./check_spectrum_scale.py pool -d Processing_1 -w 95 -c 97 -L
+
 Critical - Data Pool: 1 Meta Pool: 0|Data_Pool_2=7261755392;9367607705.6;3747043082.24;;62419992576 Data_Pool_1=2315413504;9367607705.6;3747043082.24;;93676077056 Meta_system=3773308928;0.0;0.0;;3901249536 
 Critical Data Pool: Pool_1
 Warning Data Pool: 
@@ -61,6 +65,7 @@ This check will test if specific pools are above 95/97% percent of saturation fo
 
 <code>
 ./check_spectrum_scale.py pool -d Processing_1 -w 95 -c 97 -p Pool_1,Pool_2 -L
+
 Critical - Data Pool: 1 Meta Pool: 0|Data_Pool_2=7261755392;9367607705.6;3747043082.24;;62419992576 Data_Pool_1=2315413504;9367607705.6;3747043082.24;;93676077056 Meta_system=3773308928;0.0;0.0;;3901249536 
 Critical Data Pool: Pool_1
 Warning Data Pool: 
@@ -74,6 +79,7 @@ This check will test if some quota is above 95/97% percent of saturation for the
 
 <code>
 ./check_spectrum_scale.py quota -d Processing_1 -w 95 -c 97
+
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
@@ -82,6 +88,7 @@ This check will test if some quota is above 95/97% percent of saturation for the
 
 <code>
 ./check_spectrum_scale.py quota -d Processing_1 -w 95 -c 97 -fs largeHome
+
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
@@ -90,6 +97,7 @@ This check will test if some quota is above 95/97% percent of saturation for the
 
 <code>
 ./check_spectrum_scale.py quota -d Processing_1 -w 95 -c 97 -fs largeHome
+
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
@@ -98,6 +106,7 @@ This check will test if some quota is above 95/97% percent of utilization for th
 
 <code>
 ./check_spectrum_scale.py quota -w 95 -c 97 -d Processing_1 -n admins -t g
+
 OK - No Violations detected|blockViolation=0 blockCritical=0 fileViolation=0 fileCritical=0
 </code>
 
