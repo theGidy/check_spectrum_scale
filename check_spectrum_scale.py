@@ -282,10 +282,6 @@ def checkPools(args):
     command = "mmlspool"
     command += " " + args.device
     
-    if args.pools:
-        command += " " + args.pool
-  
-    
     output = executeBashCommand(command)
     output=re.sub(' {1,}',';',output)
     #print(output)
@@ -300,6 +296,7 @@ def checkPools(args):
     #print(list)
 
     resultList = []
+    
     for i in list:
         idx = list.index(i)
         # Skipp header
@@ -316,6 +313,14 @@ def checkPools(args):
             if poolObject.metaFree < calculateValue(args.warning,poolObject.metaTotal):
                      poolObject.warningMeta=True
             resultList.append(poolObject)
+            
+    if args.pools:
+        resultList= [x for x in resultList if x.name  in args.pools.split(',')]
+        
+    if args.type=="m":
+        resultList= [x for x in resultList if x.meta == True]
+    elif args.type=="d":
+        resultList= [x for x in resultList if x.data == True]
 
     criticalData = [x for x in resultList if x.criticalData == True]
     warningData = [x for x in resultList if x.warningData == True and x.criticalData == False]
@@ -329,7 +334,6 @@ def checkPools(args):
         checkResult.performanceData +="Data_"+x.name+"="+str(x.dataFree)+";"+str(calculateValue(args.warning,poolObject.dataTotal))+";"+str(calculateValue(args.critical,poolObject.dataTotal))+";;"+str(x.dataTotal)+" ";
     for x in [x for x in resultList if x.meta==True]:
         checkResult.performanceData +="Meta_"+x.name+"="+str(x.metaFree)+";"+str(calculateValue(args.warning,poolObject.metaTotal))+";"+str(calculateValue(args.critical,poolObject.metaTotal))+";;"+str(x.metaTotal)+" ";
-    
             
     if len(criticalData) > 0 or len(criticalMeta) > 0 :
         checkResult.returnCode = STATE_CRITICAL
@@ -530,9 +534,9 @@ def argumentParser():
     poolsParser.set_defaults(func=checkPools) 
     poolsParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if disk usage is over this value (default=90 percent)', default=90)
     poolsParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if disk usage is over this value (default=95 percent)', default=96)
-    poolsParser.add_argument('-t', '--type', dest='type', choices=['m', 'd','b'], help='Check meta-disks (m),data-disks (d) or both (b)',default='b')
+    poolsParser.add_argument('-t', '--type', dest='type', choices=['m', 'd'], help='Check only meta-disks (m),data-disks (d)')
     poolsParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the disk usage', required=True) 
-    poolsParser.add_argument('-p', '--pools', dest='pools', action='store', help='Name of the pool to check (delimiter is | )')
+    poolsParser.add_argument('-p', '--pools', dest='pools', action='store', help='Name of the pool to check (delimiter is , )')
     poolsParser.add_argument('-L', '--Long', dest='longOutput', action='store_true', help='Displaies additional informations in the long output', default=False)
       
     quotaParser = subParser.add_parser('quota', help='Check the quota on a filesystem');
