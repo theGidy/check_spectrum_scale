@@ -44,9 +44,11 @@ OK - Node gpfs-node1.test.de is in state:active|nodesUp=3;5;3;; totalNodes=3 nod
 
 ##FileSet
 
+##Mounts
+
 ##Pools
 
-##Check all pools
+###Check all pools
 This check will test if some pool are above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a long output
 
 
@@ -60,7 +62,7 @@ Critical Meta Pool:
 Warning Meta Pool: 
 </code>
 
-##Check one or more specific pools
+###Check one or more specific pools
 This check will test if specific pools are above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a long output
 
 <code>
