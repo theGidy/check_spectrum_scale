@@ -13,6 +13,16 @@ icinga  ALL=(ALL) NOPASSWD: /usr/lpp/mmfs/bin/mmrepquota
 icinga  ALL=(ALL) NOPASSWD: /usr/lpp/mmfs/bin/mmlsquota
 ```
 
+#NRPE.cfg Example
+``` bash
+command[check_quota_user]=/usr/lib/nagios/plugins/check_spectrum_scale.py quota -w 95 -c 97 -d Processing_1 -t u -L
+command[check_fileset_linked]=/usr/lib/nagios/plugins/check_spectrum_scale.py filesets -d Processing_1 -l  -L -w 0 -c 2
+command[check_fileset_inode]=/usr/lib/nagios/plugins/check_spectrum_scale.py filesets -d Processing_1 -i  -L -w 90 -c 96
+command[check_status_quorum]=/usr/lib/nagios/plugins/check_spectrum_scale.py status -q
+command[check_status_nodes]=/usr/lib/nagios/plugins/check_spectrum_scale.py status -n -w 2 -c 1
+command[check_status_node]=/usr/lib/nagios/plugins/check_spectrum_scale.py status -s
+```
+
 # Example
 
 ##Status
