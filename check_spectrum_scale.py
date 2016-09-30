@@ -218,7 +218,7 @@ def checkRequirments():
         -IBM Spectrum Scale
     """
 
-    if not (os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate")):
+    if not (os.path.isdir("/usr/lpp/mmfs/bin/") and os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate") and os.path.isfile("/usr/lpp/mmfs/bin/mmlsfileset") and os.path.isfile("/usr/lpp/mmfs/bin/mmrepquota") and os.path.isfile("/usr/lpp/mmfs/bin/mmfs")):
         checkResult = CheckResult()
         checkResult.returnCode = STATE_CRITICAL
         checkResult.returnMessage = "CRITICAL - No IBM Spectrum Scale Installation detected."
@@ -234,7 +234,7 @@ def checkStatus(args):
         - how many nodes are online
     """
     checkResult = CheckResult()
-    output = executeBashCommand("/usr/lpp/mmfs/bin/mmgetstate -LY")
+    output = executeBashCommand("sudo /usr/lpp/mmfs/bin/mmgetstate -LY")
     
     lines = output.split("\n")
     list = []
@@ -298,7 +298,7 @@ def checkFileSets(args):
         - blocksize utilization
     """
     checkResult = CheckResult()
-    command = "/usr/lpp/mmfs/bin/mmlsfileset " + args.device
+    command = "sudo /usr/lpp/mmfs/bin/mmlsfileset " + args.device
     if args.filesets:
         command += " " + args.filesets
     if args.size:
@@ -383,7 +383,7 @@ def checkPools(args):
         - disk usage single pool
     """
     checkResult = CheckResult()
-    command = "/usr/lpp/mmfs/bin/mmlspool"
+    command = "sudo /usr/lpp/mmfs/bin/mmlspool"
     command += " " + args.device
     
     output = executeBashCommand(command)
@@ -475,7 +475,7 @@ def checkQuota(args):
         - quota per users
     """
     checkResult = CheckResult()
-    command = "/usr/lpp/mmfs/bin/mmrepquota -Y " 
+    command = "sudo /usr/lpp/mmfs/bin/mmrepquota -Y " 
     if args.type:
         command += "-" + args.type
   
