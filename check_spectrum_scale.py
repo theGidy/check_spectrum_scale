@@ -234,7 +234,7 @@ def checkStatus(args):
         - how many nodes are online
     """
     checkResult = CheckResult()
-    output = executeBashCommand("mmgetstate -LY")
+    output = executeBashCommand("/usr/lpp/mmfs/bin/mmgetstate -LY")
     
     lines = output.split("\n")
     list = []
@@ -298,7 +298,7 @@ def checkFileSets(args):
         - blocksize utilization
     """
     checkResult = CheckResult()
-    command = "mmlsfileset " + args.device
+    command = "/usr/lpp/mmfs/bin/mmlsfileset " + args.device
     if args.filesets:
         command += " " + args.filesets
     if args.size:
@@ -383,7 +383,7 @@ def checkPools(args):
         - disk usage single pool
     """
     checkResult = CheckResult()
-    command = "mmlspool"
+    command = "/usr/lpp/mmfs/bin/mmlspool"
     command += " " + args.device
     
     output = executeBashCommand(command)
@@ -475,7 +475,7 @@ def checkQuota(args):
         - quota per users
     """
     checkResult = CheckResult()
-    command = "mmrepquota -Y " 
+    command = "/usr/lpp/mmfs/bin/mmrepquota -Y " 
     if args.type:
         command += "-" + args.type
   
