@@ -19,7 +19,7 @@
 # The actual code is managed in the following Git rebository - please use the
 # Issue Tracker to ask questions, report problems or request enhancements. The
 # repository also contains an extensive README.
-#   https://github.com/theGidy/check_spectrum_scale.git
+# https://github.com/theGidy/check_spectrum_scale.git
 
 
 ################################################################################
@@ -102,29 +102,53 @@ class CheckResult:
         
 class PoolObject:
     """
-    Simple class whtich holds the name, 
+    Simple class whtich holds informations about pools 
     """
     
-    def __init__(self, name,id,data,meta,dataTotal,dataFree,metaTotal,metaFree):
+    def __init__(self, name, id, data, meta, dataTotal, dataFree, metaTotal, metaFree):
         self.name = name
         self.id = int(id)
-        self.data =(data=='yes')
-        self.meta =(meta=='yes')
-        self.dataTotal=int(dataTotal)
-        self.dataFree=int(dataFree)
-        self.metaTotal=int(metaTotal)
-        self.metaFree=int(metaFree)
-        self.criticalMeta=False;
-        self.criticalData=False;
-        self.warningMeta=False;
-        self.warningData=False;
+        self.data = (data == 'yes')
+        self.meta = (meta == 'yes')
+        self.dataTotal = int(dataTotal)
+        self.dataFree = int(dataFree)
+        self.metaTotal = int(metaTotal)
+        self.metaFree = int(metaFree)
+        self.criticalMeta = False;
+        self.criticalData = False;
+        self.warningMeta = False;
+        self.warningData = False;
         
     def __str__(self):
         """
         Returns: the string of the class"""
-        text="[name: " + self.name + ", id: " + str(self.id) + ", data: " + str(self.data) + ", meta: " + str(self.meta) + ", dataTotal: " + str(self.dataTotal)
-        text+=", dataFree: " + str(self.dataFree) +", metaTotal: " + str(self.metaTotal) + ", metaFree: " + str(self.metaFree)+", warningData: " + str(self.warningData) 
-        text+=", ciritcalData: " + str(self.criticalData) + ", warningMeta: " + str(self.warningMeta) + ", criticalMeta: " + str(self.criticalMeta) +  "]"
+        text = "[name: " + self.name + ", id: " + str(self.id) + ", data: " + str(self.data) + ", meta: " + str(self.meta) + ", dataTotal: " + str(self.dataTotal)
+        text += ", dataFree: " + str(self.dataFree) + ", metaTotal: " + str(self.metaTotal) + ", metaFree: " + str(self.metaFree) + ", warningData: " + str(self.warningData) 
+        text += ", ciritcalData: " + str(self.criticalData) + ", warningMeta: " + str(self.warningMeta) + ", criticalMeta: " + str(self.criticalMeta) + "]"
+        return text
+    
+class FileSetObject:
+    """
+    Simple class whtich holds informations about filesets
+    """
+    
+    def __init__(self, filesystemName, filesetName, id, status, maxInodes, allocInodes, dataSize=0):
+        self.filesystemName = filesystemName
+        self.filesetName = filesetName
+        self.id = id
+        self.status = status
+        self.maxInodes = int(maxInodes)
+        self.allocInodes = int(allocInodes)
+        self.freeInodes = self.maxInodes - self.allocInodes
+        self.dataSize = dataSize
+        self.warningInodes = False
+        self.criticalInodes = False
+
+    def __str__(self):
+        """
+        Returns: the string of the class""" 
+        text = "[filesetName: " + self.filesetName + ", id: " + str(self.id) + ", filesystemName: " + self.filesystemName + ", status: " + self.status + ", maxInodes: " + str(self.maxInodes)
+        text += ", allocInodes: " + str(self.allocInodes) + ", freeInodes: " + str(self.freeInodes) + ", dataSize: " + str(self.dataSize) + ", warningInodes: " + str(self.warningInodes) + ", criticalInodes: " + str(self.criticalInodes) + "]"
         return text
     
 
@@ -194,7 +218,7 @@ def checkRequirments():
         -IBM Spectrum Scale
     """
 
-    if not (os.path.isdir("/usr/lpp/mmfs/bin/") or os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate")):
+    if not (os.path.isdir("/usr/lpp/mmfs/bin/") and os.path.isfile("/usr/lpp/mmfs/bin/mmgetstate") and os.path.isfile("/usr/lpp/mmfs/bin/mmlsfileset") and os.path.isfile("/usr/lpp/mmfs/bin/mmrepquota") and os.path.isfile("/usr/lpp/mmfs/bin/mmfs")):
         checkResult = CheckResult()
         checkResult.returnCode = STATE_CRITICAL
         checkResult.returnMessage = "CRITICAL - No IBM Spectrum Scale Installation detected."
@@ -210,7 +234,7 @@ def checkStatus(args):
         - how many nodes are online
     """
     checkResult = CheckResult()
-    output = executeBashCommand("mmgetstate -LY")
+    output = executeBashCommand("sudo /usr/lpp/mmfs/bin/mmgetstate -LY")
     
     lines = output.split("\n")
     list = []
@@ -268,9 +292,89 @@ def checkFileSystems(args):
     
 def checkFileSets(args):
     """
-    
+        Check depending on the arguments following settings:
+        - inode utilization on filesets
+        - mount status
+        - blocksize utilization
     """
+    checkResult = CheckResult()
+    command = "sudo /usr/lpp/mmfs/bin/mmlsfileset " + args.device
+    if args.filesets:
+        command += " " + args.filesets
+    if args.size:
+        command += "-d"
+    command += " -Y"
+   
+    output = executeBashCommand(command)
+    lines = output.split("\n")
+    list = []
+    for line in lines:
+        list.append(line.split(":"))
+    # Clear uneccesary last line 
+    list.remove(list[-1])
     
+    resultList = []
+    
+    for i in list:
+        idx = list.index(i)
+        # Skipp header
+        if idx > 0:
+            if args.size:
+                filesetObject = FileSetObject(filesystemName=list[idx][6], filesetName=list[idx][7], id=list[idx][7], status=list[idx][10], maxInodes=list[idx][32], allocInodes=list[idx][33], dataSize=list[idx][15])
+            else:
+                filesetObject = FileSetObject(filesystemName=list[idx][6], filesetName=list[idx][7], id=list[idx][7], status=list[idx][10], maxInodes=list[idx][32], allocInodes=list[idx][33])
+            if filesetObject.freeInodes < calculatePercentageOfValue(args.warning, filesetObject.maxInodes):
+                     filesetObject.warningInodes = True   
+            if filesetObject.freeInodes < calculatePercentageOfValue(args.warning, filesetObject.maxInodes):
+                     filesetObject.criticalInodes = True      
+            resultList.append(filesetObject)
+    checkResult = CheckResult()   
+
+    if args.inodes:
+        criticalNodeUtilization= [x.filesetName for x in resultList if x.criticalInodes== True]
+        warningNodeUtilization= [x.filesetName for x in resultList if x.warningInodes == True and x.criticalInodes == False]
+    
+        if len(criticalNodeUtilization)>0:
+            checkResult.returnCode = STATE_CRITICAL
+            checkResult.returnMessage = "Critical  - On "+str(len(criticalNodeUtilization))+" filesets the inode utilization is to high!"
+        elif len(warningNodeUtilization)>0:
+            checkResult.returnCode = STATE_WARNING
+            checkResult.returnMessage = "Warning - On "+str(len(warningNodeUtilization))+"  filesets the inode utilization is to high!"
+        else:
+            checkResult.returnCode = STATE_OK
+            checkResult.returnMessage = "OK - Inode utilization is normal"
+            
+        if args.longOutput:       
+            checkResult.longOutput = "Critical FileSets: " + ", ".join(criticalNodeUtilization) + "\n"   
+            checkResult.longOutput += "Warning FileSets: " + ", ".join(warningNodeUtilization) + "\n"
+        checkResult.performanceData = ""
+        for x in resultList:
+            checkResult.performanceData += x.filesetName + "=" + str(x.freeInodes) + ";" + str(calculatePercentageOfValue(args.warning, x.maxInodes)) + ";" + str(calculatePercentageOfValue(args.critical, x.maxInodes)) + ";0;" + str(x.maxInodes) + " "+x.filesetName+"_blockSiz:"+str(x.dataSize)+"KB;;;; ";
+            
+    elif args.link:
+        linkedList=[x.filesetName for x in resultList if x.status == 'Linked']
+        unlinkedList=[x.filesetName  for x in resultList if x.status == 'Unlinked']
+        deletedList=[x.filesetName  for x in resultList if x.status == 'Deleted']
+        if args.longOutput:       
+            checkResult.longOutput = "Linked FileSets: " + ", ".join(linkedList) + "\n"   
+            checkResult.longOutput += "Unlinked FileSets: " + ", ".join(unlinkedList) + "\n"
+            checkResult.longOutput += "Deleted FileSets: " + ", ".join(unlinkedList) + "\n"
+        if len(unlinkedList)>int(args.critical):
+            checkResult.returnCode = STATE_CRITICAL
+            checkResult.returnMessage = "Critical  - "+str(len(unlinkedList))+" filesets are unlinked!"
+        elif len(unlinkedList)>int(args.warning):
+            checkResult.returnCode = STATE_WARNING
+            checkResult.returnMessage = "Warning - "+str(len(unlinkedList))+" filesets are unlinked!"
+        else:
+            checkResult.returnCode = STATE_OK
+            checkResult.returnMessage = "OK - "+str(len(linkedList))+"/"+str(len(resultList))+" filesets are linked"
+        
+        checkResult.performanceData = "Linked=" + str(len(linkedList)) + ";" + str(args.warning) + ";" + str(args.critical) + ";0;" + str(len(resultList)) + " Unlinked=" + str(len(unlinkedList)) + ";" + str(args.warning) + ";" + str(args.critical) + ";0;" + str(len(resultList)) 
+        checkResult.performanceData +=" Deleted=" + str(len(deletedList)) + ";" + str(args.warning) + ";" + str(args.critical) + ";0;" + str(len(resultList)) + " ";
+          
+    checkResult.printMonitoringOutput()
+        
+  
 def checkPools(args):
     """
         Check depending on the arguments following settings:
@@ -279,21 +383,21 @@ def checkPools(args):
         - disk usage single pool
     """
     checkResult = CheckResult()
-    command = "mmlspool"
+    command = "sudo /usr/lpp/mmfs/bin/mmlspool"
     command += " " + args.device
     
     output = executeBashCommand(command)
-    output=re.sub(' {1,}',';',output)
-    #print(output)
+    output = re.sub(' {1,}', ';', output)
+    # print(output)
     lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(";"))
     # Clear uneccesary last line 
-    #print(list)
+    # print(list)
     list.remove(list[-1])
     list.remove(list[0])
-    #print(list)
+    # print(list)
 
     resultList = []
     
@@ -301,26 +405,24 @@ def checkPools(args):
         idx = list.index(i)
         # Skipp header
         if idx > 0:
-            poolObject=PoolObject(name=list[idx][0],id=list[idx][1],data=list[idx][4],meta=list[idx][5],dataTotal=list[idx][6],dataFree=list[idx][7],metaTotal=list[idx][10],metaFree=list[idx][11])
-            #if (float((100.0-float(args.warning))*poolObject.dataTotal)>poolObject.dataFree:
-            #print(poolObject.dataFree,poolObject.dataTotal, ((100.0-args.critical)*float(poolObject.dataTotal))/100.0,args.warning)
-            if poolObject.dataFree < calculateValue(args.critical,poolObject.dataTotal):
-                     poolObject.criticalData=True
-            if poolObject.metaFree < calculateValue(args.critical,poolObject.metaTotal):
-                     poolObject.criticalMeta=True
-            if poolObject.dataFree < calculateValue(args.warning,poolObject.dataTotal):
-                     poolObject.warningData=True
-            if poolObject.metaFree < calculateValue(args.warning,poolObject.metaTotal):
-                     poolObject.warningMeta=True
+            poolObject = PoolObject(name=list[idx][0], id=list[idx][1], data=list[idx][4], meta=list[idx][5], dataTotal=list[idx][6], dataFree=list[idx][7], metaTotal=list[idx][10], metaFree=list[idx][11])
+            if poolObject.dataFree < calculatePercentageOfValue(args.critical, poolObject.dataTotal):
+                     poolObject.criticalData = True
+            if poolObject.metaFree < calculatePercentageOfValue(args.critical, poolObject.metaTotal):
+                     poolObject.criticalMeta = True
+            if poolObject.dataFree < calculatePercentageOfValue(args.warning, poolObject.dataTotal):
+                     poolObject.warningData = True
+            if poolObject.metaFree < calculatePercentageOfValue(args.warning, poolObject.metaTotal):
+                     poolObject.warningMeta = True
             resultList.append(poolObject)
             
     if args.pools:
-        resultList= [x for x in resultList if x.name  in args.pools.split(',')]
+        resultList = [x for x in resultList if x.name in args.pools.split(',')]
         
-    if args.type=="m":
-        resultList= [x for x in resultList if x.meta == True]
-    elif args.type=="d":
-        resultList= [x for x in resultList if x.data == True]
+    if args.type == "m":
+        resultList = [x for x in resultList if x.meta == True]
+    elif args.type == "d":
+        resultList = [x for x in resultList if x.data == True]
 
     criticalData = [x for x in resultList if x.criticalData == True]
     warningData = [x for x in resultList if x.warningData == True and x.criticalData == False]
@@ -328,23 +430,23 @@ def checkPools(args):
     warningMeta = [x for x in resultList if x.warningMeta == True and x.ciriticalMeta == False]
     
     checkResult = CheckResult()
-    #TODO Function to add performance data for each pool
-    checkResult.performanceData=""
-    for x in [x for x in resultList if x.data==True]:
-        checkResult.performanceData +="Data_"+x.name+"="+str(x.dataFree)+";"+str(calculateValue(args.warning,poolObject.dataTotal))+";"+str(calculateValue(args.critical,poolObject.dataTotal))+";;"+str(x.dataTotal)+" ";
-    for x in [x for x in resultList if x.meta==True]:
-        checkResult.performanceData +="Meta_"+x.name+"="+str(x.metaFree)+";"+str(calculateValue(args.warning,poolObject.metaTotal))+";"+str(calculateValue(args.critical,poolObject.metaTotal))+";;"+str(x.metaTotal)+" ";
+
+    checkResult.performanceData = ""
+    for x in [x for x in resultList if x.data == True]:
+        checkResult.performanceData += "Data_" + x.name + "=" + str(x.dataFree) + ";" + str(calculatePercentageOfValue(args.warning, x.dataTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.dataTotal)) + ";;" + str(x.dataTotal) + " ";
+    for x in [x for x in resultList if x.meta == True]:
+        checkResult.performanceData += "Meta_" + x.name + "=" + str(x.metaFree) + ";" + str(calculatePercentageOfValue(args.warning, x.metaTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.metaTotal)) + ";;" + str(x.metaTotal) + " ";
             
     if len(criticalData) > 0 or len(criticalMeta) > 0 :
         checkResult.returnCode = STATE_CRITICAL
-        checkResult.returnMessage = "Critical - Data Pool: "+ str( len(criticalData))+" Meta Pool: "+ str(len(criticalMeta))
+        checkResult.returnMessage = "Critical - Data Pool: " + str(len(criticalData)) + " Meta Pool: " + str(len(criticalMeta))
         
     elif len(warningData) > 0 or len(warningMeta) > 0 :
         checkResult.returnCode = STATE_WARNING
-        checkResult.returnMessage = "Critical - Data Pool: "+ str( len(criticalData))+" Meta Pool: "+ str(len(criticalMeta))
+        checkResult.returnMessage = "Warning - Data Pool: " + str(len(criticalData)) + " Meta Pool: " + str(len(criticalMeta))
     else:
         checkResult.returnCode = STATE_OK
-        checkResult.returnMessage = "OK - All "+len(resultList)+"pools in range"
+        checkResult.returnMessage = "OK - All " + len(resultList) + "pools in range"
 
     if args.longOutput:       
             criticalData = [x.name for x in resultList if x.criticalData == True]
@@ -358,11 +460,11 @@ def checkPools(args):
     checkResult.printMonitoringOutput()
         
         
-def calculateValue(value,total):
+def calculatePercentageOfValue(percent, value):
     """
-    Return - the warning/critical level of free space
+    Return - (100.0-percent*value)/100.0
     """
-    return ((100.0-value)*float(total))/100.0
+    return ((100.0 - float(percent)) * float(value)) / 100.0
 
     
 def checkQuota(args):
@@ -373,7 +475,7 @@ def checkQuota(args):
         - quota per users
     """
     checkResult = CheckResult()
-    command = "mmrepquota -Y " 
+    command = "sudo /usr/lpp/mmfs/bin/mmrepquota -Y " 
     if args.type:
         command += "-" + args.type
   
@@ -431,9 +533,9 @@ def checkQuota(args):
                 
             if quotaObject.isVioliation():
                 resultList.append(quotaObject)
-    #Filter for single user/grp request
+    # Filter for single user/grp request
     if args.name != None:   
-        resultList=[x for x in resultList if x.name==args.name]
+        resultList = [x for x in resultList if x.name == args.name]
         
     blockViolation = len([x for x in resultList if x.blockViolation == True and x.blockCritical == False])
     fileViolation = len([x for x in resultList if x.fileViolation == True and x.fileCritical == False])
@@ -487,11 +589,11 @@ def checkQuota(args):
     if blockViolation > 0 and blockCritical > 0 or fileViolation > 0 and fileViolation > 0:
         
         checkResult.returnCode = STATE_CRITICAL
-        checkResult.returnMessage = "Critical - Block Critical: "+ str(blockCritical)+" File Critical: "+ str(fileCritical)
+        checkResult.returnMessage = "Critical - Block Critical: " + str(blockCritical) + " File Critical: " + str(fileCritical)
         
     elif blockViolation > 0 or fileViolation > 0:
         checkResult.returnCode = STATE_WARNING
-        checkResult.returnMessage = "WARNING - Block: "+ str(blockViolation)+" File: "+ str(fileViolation)
+        checkResult.returnMessage = "WARNING - Block: " + str(blockViolation) + " File: " + str(fileViolation)
     else:
         checkResult.returnCode = STATE_OK
         checkResult.returnMessage = "OK - No Violations detected"
@@ -525,19 +627,25 @@ def argumentParser():
      
     filesetParser = subParser.add_parser('filesets', help='Check the filesets')
     filesetParser.set_defaults(func=checkFileSets) 
-    filesetParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if disk usage is over this value (default=90 percent)', default=90)
-    filesetParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if disk usage is over this value (default=95 percent)', default=96)
-    filesetParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the disk usage', required=True) 
-    filesetParser.add_argument('-p', '--pools', dest='pools', action='store', help='Name of the pool to check (delimiter is | )')
+    filesetParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if inode utilization is over this value (default=90 percent)', default=90)
+    filesetParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if inode utilization is over this value (default=95 percent)', default=96)
+    filesetParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the inode utilization', required=True) 
+    filesetParser.add_argument('-f', '--filesets', dest='filesets', action='store', help='Name of the filesets to check (delimiter is ,)')
+    filesetParser.add_argument('-s', '--size', dest='size', action='store_true', help='Additional outputs the blocksize. Needs more than 5 minutes to respond!')
+    filesetGroup = filesetParser.add_mutually_exclusive_group(required=True)
+    filesetGroup.add_argument('-l', '--link', dest='link', action='store_true', help='Check the link status of given filesets')
+    filesetGroup.add_argument('-i', '--inodes', dest='inodes', action='store_true', help='Check thei node utilization')
+    
+    filesetParser.add_argument('-L', '--Long', dest='longOutput', action='store_true', help='Display additional informations in the long output', default=False)
      
     poolsParser = subParser.add_parser('pools', help='Check the pools');
     poolsParser.set_defaults(func=checkPools) 
-    poolsParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if disk usage is over this value (default=90 percent)', default=90)
-    poolsParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if disk usage is over this value (default=95 percent)', default=96)
-    poolsParser.add_argument('-t', '--type', dest='type', choices=['m', 'd'], help='Check only meta-disks (m),data-disks (d)')
-    poolsParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the disk usage', required=True) 
-    poolsParser.add_argument('-p', '--pools', dest='pools', action='store', help='Name of the pool to check (delimiter is , )')
-    poolsParser.add_argument('-L', '--Long', dest='longOutput', action='store_true', help='Displaies additional informations in the long output', default=False)
+    poolsParser.add_argument('-w', '--warning', dest='warning', action='store', help='Warning if pool usage is over this value (default=90 percent)', default=90)
+    poolsParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if pool usage is over this value (default=95 percent)', default=96)
+    poolsParser.add_argument('-t', '--type', dest='type', choices=['m', 'd'], help='Check only meta-pool (m),data-pool (d)')
+    poolsParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the pool usage', required=True) 
+    poolsParser.add_argument('-p', '--pools', dest='pools', action='store', help='Name of the pool to check (delimiter is ,)')
+    poolsParser.add_argument('-L', '--Long', dest='longOutput', action='store_true', help='Display additional informations in the long output', default=False)
       
     quotaParser = subParser.add_parser('quota', help='Check the quota on a filesystem');
     quotaParser.set_defaults(func=checkQuota)
