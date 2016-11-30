@@ -4,6 +4,9 @@ This python script checks various aspects of an IBM Spectrum Scale (a.k.a GPFS) 
 # Note
 This script is in the development process! We don't have implemented the full functionality. Please report bugs to Ph.Posovszky@gmail.com or on GitHub in the Issus tracker.
 
+# Open Soruce Release
+https://github.com/theGidy/check_spectrum_scale
+
 #Permissions for Nagios/Icinga
 Change the execution permissions in visudo 
 
