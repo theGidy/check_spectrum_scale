@@ -231,7 +231,7 @@ def checkStatus(args):
     Check depending on the arguments following settings:
         - gpfs status
         - quorum status
-        - how many nodes are online
+	- nodes
     """
     checkResult = CheckResult()
     output = executeBashCommand("sudo /usr/lpp/mmfs/bin/mmgetstate -LY")
@@ -242,35 +242,19 @@ def checkStatus(args):
         list.append(line.split(":"))     
     
     state = getValueFromList(list, "state", 1)
-    quorum = getValueFromList(list, "quorum", 1)
+    quorumNeeded = getValueFromList(list, "quorum", 1)
     nodeName = getValueFromList(list, "nodeName", 1)
-    nodeNumber = getValueFromList(list, "nodeNumber", 1)
-    nodesUp = getValueFromList(list, "nodesUp", 1)
+    quorumsUp = getValueFromList(list, "nodesUp", 1)
     totalNodes = getValueFromList(list, "totalNodes", 1)
-    nodesDown = eval(totalNodes) - eval(nodesUp)
-    definedQuorums=executeBashCommnd("mmlscluster|grep quorum| wc -l")
-    quorumNeeded = ((eval(definedQuorums) / 2) + 1)
-    
+
     if args.quorum: 
-        if quorum < quorumNeeded :   
+        if quorumsUp < quorumNeeded :   
             checkResult.returnCode = STATE_CRITICAL
-            checkResult.returnMessage = "Critical - GPFS is ReadOnly because not enougth quorum (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"  
+            checkResult.returnMessage = "Critical - GPFS is ReadOnly because not enougth quorum " + str(quorumsUp) + " are online and " + str(quorumNeeded) + " are required!"  
         else:
             checkResult.returnCode = STATE_OK
-            checkResult.returnMessage = "OK - (" + str(quorum) + "/" + str(quorumNeeded) + ") nodes are online!"
-        checkResult.performanceData = "quorumUp=" + str(quorum) + ";" + str(quorumNeeded) + ";" + str(quorumNeeded) + ";;"
-    
-    if args.nodes:   
-        if args.critical >= nodesUp:
-            checkResult.returnCode = STATE_CRITICAL
-            checkResult.returnMessage = "Critical - Only " + str(nodesUp) + "/" + str(totalNodes) + " Nodes are up."
-        elif args.warning >= nodesUp:
-            checkResult.returnCode = STATE_WARNING
-            checkResult.returnMessage = "Warning - Only " + str(nodesUp) + "/" + str(totalNodes) + " Nodes are up."
-        else:
-            checkResult.returnCode = STATE_OK
-            checkResult.returnMessage = "OK - " + str(nodesUp) + " Nodes are up."
-        checkResult.performanceData = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown)
+            checkResult.returnMessage = "OK - " + str(quorumsUp) + " are up and " + str(quorumNeeded) + " quroums are required!"
+        checkResult.performanceData = "qourumUp=" + str(quorumsUp) + ";" + str(quorumNeeded) + ";;; quorumNeeded=" + str(quorumNeeded) + ";;; totalNodes=" + str(totalNodes)
                 
     if args.status:                
         if not(state == "active"):
@@ -279,8 +263,18 @@ def checkStatus(args):
         else:
             checkResult.returnCode = STATE_OK
             checkResult.returnMessage = "OK - Node " + str(nodeName) + " is in state:" + str(state)
-        checkResult.performanceData = "nodesUp=" + str(nodesUp) + ";" + str(args.warning) + ";" + str(args.critical) + ";; totalNodes=" + str(totalNodes) + " nodesDown=" + str(nodesDown) + " quorumUp=" + str(quorum) + ";" + str(quorumNeeded) + ";;;"
-        
+        checkResult.performanceData = "quorumUp=" + str(quorumsUp) + ";" + str(quorumNeeded) + ";;; quorumNeeded=" + str(quorumNeeded) + ";;; totalNodes=" + str(totalNodes)
+    if args.nodes:
+        if totalNodes < args.critical :   
+            checkResult.returnCode = STATE_CRITICAL
+            checkResult.returnMessage = "Critical - Only" + str(totalNodes) + " are up"
+        elif totalNodes < args.warning :
+            checkResult.returnCode = STATE_WARNING
+            checkResult.returnMessage = "WARNING - Only" + str(totalNodes) + " are up"
+        else:
+            checkResult.returnCode = STATE_OK
+            checkResult.returnMessage = "OK - " + str(totalNodes) + " are up"
+        checkResult.performanceData = "quorumsUp=" + str(quorumsUp) + ";" + str(quorumNeeded) + ";;; quorumNeeded=" + str(quorumNeeded) + ";;; totalNodes=" + str(totalNodes)
    
     checkResult.printMonitoringOutput()
         
@@ -670,3 +664,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # print parser.parse_args()
     args.func(args)
+
