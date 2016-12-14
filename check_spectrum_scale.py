@@ -248,8 +248,8 @@ def checkStatus(args):
     nodesUp = getValueFromList(list, "nodesUp", 1)
     totalNodes = getValueFromList(list, "totalNodes", 1)
     nodesDown = eval(totalNodes) - eval(nodesUp)
-       
-    quorumNeeded = ((eval(totalNodes) / 2) + 1)
+    definedQuorums=executeBashCommnd("mmlscluster|grep quorum| wc -l")
+    quorumNeeded = ((eval(definedQuorums) / 2) + 1)
     
     if args.quorum: 
         if quorum < quorumNeeded :   
