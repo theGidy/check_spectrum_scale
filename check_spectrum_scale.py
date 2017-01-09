@@ -437,10 +437,10 @@ def checkPools(args):
         
     elif len(warningData) > 0 or len(warningMeta) > 0 :
         checkResult.returnCode = STATE_WARNING
-        checkResult.returnMessage = "Warning - Data Pool: " + str(len(criticalData)) + " Meta Pool: " + str(len(criticalMeta))
+        checkResult.returnMessage = "Warning - Data Pool: " + str(len(warningData)) + " Meta Pool: " + str(len(warningMeta))
     else:
         checkResult.returnCode = STATE_OK
-        checkResult.returnMessage = "OK - All " + len(resultList) + "pools in range"
+        checkResult.returnMessage = "OK - All " + str(len(resultList)) + " pools in range"
 
     if args.longOutput:       
             criticalData = [x.name for x in resultList if x.criticalData == True]
@@ -450,7 +450,7 @@ def checkPools(args):
             checkResult.longOutput = "Critical Data Pool: " + ", ".join(criticalData) + "\n"   
             checkResult.longOutput += "Warning Data Pool: " + ", ".join(warningData) + "\n"
             checkResult.longOutput += "Critical Meta Pool: " + ", ".join(criticalMeta) + "\n"   
-            checkResult.longOutput += "Warning Meta Pool: " + ", ".join(warningMeta) + "\n"
+            checkResult.longOutput += "Warning Meta Pool: " + ", ".join(warningMeta) 
     checkResult.printMonitoringOutput()
         
         
