@@ -7,7 +7,7 @@ This script is in the development process! We don't have implemented the full fu
 # Open Soruce Release
 https://github.com/theGidy/check_spectrum_scale
 
-#Permissions for Nagios/Icinga
+# Permissions for Nagios/Icinga
 Change the execution permissions in visudo 
 
 ``` bash
@@ -16,7 +16,7 @@ icinga  ALL=(ALL) NOPASSWD: /usr/lpp/mmfs/bin/mmrepquota
 icinga  ALL=(ALL) NOPASSWD: /usr/lpp/mmfs/bin/mmlsquota
 ```
 
-#NRPE.cfg Example
+# NRPE.cfg Example
 ``` bash
 command[check_quota_user]=/usr/lib/nagios/plugins/check_spectrum_scale.py quota -w 95 -c 97 -d Processing_1 -t u -L
 command[check_fileset_linked]=/usr/lib/nagios/plugins/check_spectrum_scale.py filesets -d Processing_1 -l  -L -w 0 -c 2
@@ -28,7 +28,7 @@ command[check_status_node]=/usr/lib/nagios/plugins/check_spectrum_scale.py statu
 
 # Example
 
-##Status
+## Status
 ### Status of the gpfs system
 This check will be result in warning/critical it are less than warning/critical nodes are online.
 
@@ -39,7 +39,7 @@ OK - 3 Nodes are up.|nodesUp=3;5;3;; totalNodes=3 nodesDown=0
 ```
 
 
-###Check Quorum nodes
+### Check Quorum nodes
 This check will be result in a critical if less thans n/2+1 quorum nodes are online
 
 
@@ -49,7 +49,7 @@ OK - (2/2) nodes are online!|quorumUp=2;2;2;;
 ```
 
 
-###Check node gpfs status
+###  Check node gpfs status
 This check will be result in a critical if the node is in another state than "active"
 
 
@@ -58,11 +58,11 @@ This check will be result in a critical if the node is in another state than "ac
 OK - Node gpfs-node1.test.de is in state:active|nodesUp=3;5;3;; totalNodes=3 nodesDown=0 quorumUp=2;2;;;
 ```
 
-##Filesystem
+## Filesystem
 
-##FileSet
+## FileSet
 
-###Check link status
+### Check link status
 Check the link status of all filesets, if more than 4/6 are unlinked its in warning/critical state
 
 ``` bash
@@ -73,7 +73,7 @@ Unlinked FileSets:
 Deleted FileSets: 
 ```
 
-###Check link status specific fileset
+### Check link status specific fileset
 Check the link status of the largeHome filesets, if more than 1/1 are unlinked its in warning/critical state
 
 ``` bash
@@ -84,7 +84,7 @@ Unlinked FileSets:
 Deleted FileSets: 
 ```
 
-###Check inode utilization 
+### Check inode utilization 
 Check the inode utilization of all sfilesets, if more than 90/97 percent are occupied its in warnig/critical state
 
 ``` bash
@@ -95,9 +95,9 @@ Warning FileSets:
  
 ```
 
-##Pools
+## Pools
 
-###Check all pools
+### Check all pools
 This check will test if some pool are above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a long output
 
 
@@ -110,7 +110,7 @@ Critical Meta Pool:
 Warning Meta Pool: 
 ```
 
-###Check one or more specific pools
+### Check one or more specific pools
 This check will test if specific pools are above 95/97% percent of saturation for the data/meta space on the device Processing_1 with a long output
 
 ``` bash
@@ -122,8 +122,8 @@ Critical Meta Pool:
 Warning Meta Pool: 
 ```
 
-##Quota
-###Usage
+## Quota
+### Usage
 This check will test if some quota is above 95/97% percent of saturation for the fileSystem Processing_1
 
 ``` bash
@@ -131,7 +131,7 @@ This check will test if some quota is above 95/97% percent of saturation for the
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 ```
 
-###Usage only for specific fileset
+### Usage only for specific fileset
 This check will test if some quota is above 95/97% percent of saturation for the fileSystem Processing_1 and fileset largeHome
 
 ``` bash
@@ -139,7 +139,7 @@ This check will test if some quota is above 95/97% percent of saturation for the
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 ```
 
-###Usage only for specific user
+### Usage only for specific user
 This check will test if some quota is above 95/97% percent of saturation for the user "user1"
 
 ``` bash
@@ -147,7 +147,7 @@ This check will test if some quota is above 95/97% percent of saturation for the
 WARNING - Block: 1 File: 0|blockViolation=1 blockCritical=0 fileViolation=0 fileCritical=0
 ```
 
-###Usage only for specific group
+### Usage only for specific group
 This check will test if some quota is above 95/97% percent of utilization for the group "admins"
 
 ``` bash
