@@ -296,7 +296,7 @@ def checkFileSets(args):
     if args.filesets:
         command += " " + args.filesets
     if args.size:
-        command += "-d"
+        command += " -d"
     command += " -Y"
    
     output = executeBashCommand(command)
@@ -343,7 +343,7 @@ def checkFileSets(args):
             checkResult.longOutput += "Warning FileSets: " + ", ".join(warningNodeUtilization) + "\n"
         checkResult.performanceData = ""
         for x in resultList:
-            checkResult.performanceData += x.filesetName + "=" + str(x.freeInodes) + ";" + str(calculatePercentageOfValue(args.warning, x.maxInodes)) + ";" + str(calculatePercentageOfValue(args.critical, x.maxInodes)) + ";0;" + str(x.maxInodes) + " "+x.filesetName+"_blockSiz:"+str(x.dataSize)+"KB;;;; ";
+            checkResult.performanceData += x.filesetName + "=" + str(x.freeInodes) + ";" + str(calculatePercentageOfValue(args.warning, x.maxInodes)) + ";" + str(calculatePercentageOfValue(args.critical, x.maxInodes)) + ";0;" + str(x.maxInodes) + " "+x.filesetName+"_blockSiz="+str(x.dataSize)+"KB;;;; ";
             
     elif args.link:
         linkedList=[x.filesetName for x in resultList if x.status == 'Linked']
