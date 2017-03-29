@@ -105,15 +105,17 @@ class PoolObject:
     Simple class whtich holds informations about pools 
     """
     
-    def __init__(self, name, id, data, meta, dataTotal, dataFree, metaTotal, metaFree):
+    def __init__(self, name, id, data, meta, dataTotal, dataFree, metaTotal, metaFree,unit):
         self.name = name
         self.id = int(id)
         self.data = (data == 'yes')
         self.meta = (meta == 'yes')
-        self.dataTotal = int(dataTotal)
-        self.dataFree = int(dataFree)
-        self.metaTotal = int(metaTotal)
-        self.metaFree = int(metaFree)
+	self.unitFaktor=self._getUnitFaktor(unit)
+	self.unit=unit
+        self.dataTotal = int(dataTotal)/self.unitFaktor
+        self.dataFree = int(dataFree)/self.unitFaktor
+        self.metaTotal = int(metaTotal)/self.unitFaktor
+        self.metaFree = int(metaFree)/self.unitFaktor
         self.criticalMeta = False;
         self.criticalData = False;
         self.warningMeta = False;
@@ -126,7 +128,11 @@ class PoolObject:
         text += ", dataFree: " + str(self.dataFree) + ", metaTotal: " + str(self.metaTotal) + ", metaFree: " + str(self.metaFree) + ", warningData: " + str(self.warningData) 
         text += ", ciritcalData: " + str(self.criticalData) + ", warningMeta: " + str(self.warningMeta) + ", criticalMeta: " + str(self.criticalMeta) + "]"
         return text
-    
+
+    def _getUnitFaktor(self,unit):
+	unit_dict={'KB':1000,'MB':1000000,'GB':1000000000,'TB':1000000000000}
+    	return unit_dict[unit]
+	
 class FileSetObject:
     """
     Simple class whtich holds informations about filesets
@@ -381,6 +387,12 @@ def checkPools(args):
     command += " " + args.device
     
     output = executeBashCommand(command)
+    match=re.search(r'\([^(]*\)',output)
+    if(match != None):
+	unit=match.group().replace('(','').replace(')','')
+    else:
+	unit='KB'
+    output =re.sub('\\([^\\(]*\\)','',output)
     output = re.sub(' {1,}', ';', output)
     # print(output)
     lines = output.split("\n")
@@ -390,25 +402,21 @@ def checkPools(args):
     # Clear uneccesary last line 
     # print(list)
     list.remove(list[-1])
+    list.remove(list[1])
     list.remove(list[0])
     # print(list)
-
     resultList = []
-    
-    for i in list:
-        idx = list.index(i)
-        # Skipp header
-        if idx > 0:
-            poolObject = PoolObject(name=list[idx][0], id=list[idx][1], data=list[idx][4], meta=list[idx][5], dataTotal=list[idx][6], dataFree=list[idx][7], metaTotal=list[idx][10], metaFree=list[idx][11])
-            if poolObject.dataFree < calculatePercentageOfValue(args.critical, poolObject.dataTotal):
+    for row in list:
+	poolObject = PoolObject(name=row[0], id=row[1], data=row[4], meta=row[5], dataTotal=row[6], dataFree=row[7], metaTotal=row[8], metaFree=row[9],unit=unit)
+        if poolObject.dataFree < calculatePercentageOfValue(args.critical, poolObject.dataTotal):
                      poolObject.criticalData = True
-            if poolObject.metaFree < calculatePercentageOfValue(args.critical, poolObject.metaTotal):
+        if poolObject.metaFree < calculatePercentageOfValue(args.critical, poolObject.metaTotal):
                      poolObject.criticalMeta = True
-            if poolObject.dataFree < calculatePercentageOfValue(args.warning, poolObject.dataTotal):
+        if poolObject.dataFree < calculatePercentageOfValue(args.warning, poolObject.dataTotal):
                      poolObject.warningData = True
-            if poolObject.metaFree < calculatePercentageOfValue(args.warning, poolObject.metaTotal):
+        if poolObject.metaFree < calculatePercentageOfValue(args.warning, poolObject.metaTotal):
                      poolObject.warningMeta = True
-            resultList.append(poolObject)
+        resultList.append(poolObject)
             
     if args.pools:
         resultList = [x for x in resultList if x.name in args.pools.split(',')]
@@ -427,9 +435,9 @@ def checkPools(args):
 
     checkResult.performanceData = ""
     for x in [x for x in resultList if x.data == True]:
-        checkResult.performanceData += "Data_" + x.name + "=" + str(x.dataFree) + ";" + str(calculatePercentageOfValue(args.warning, x.dataTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.dataTotal)) + ";;" + str(x.dataTotal) + " ";
+        checkResult.performanceData += "Data_" + x.name + "=" + str(x.dataFree)+x.unit + ";" + str(calculatePercentageOfValue(args.warning, x.dataTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.dataTotal)) + ";;" + str(x.dataTotal) + " ";
     for x in [x for x in resultList if x.meta == True]:
-        checkResult.performanceData += "Meta_" + x.name + "=" + str(x.metaFree) + ";" + str(calculatePercentageOfValue(args.warning, x.metaTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.metaTotal)) + ";;" + str(x.metaTotal) + " ";
+        checkResult.performanceData += "Meta_" + x.name + "=" + str(x.metaFree)+x.unit + ";" + str(calculatePercentageOfValue(args.warning, x.metaTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.metaTotal)) + ";;" + str(x.metaTotal) + " ";
             
     if len(criticalData) > 0 or len(criticalMeta) > 0 :
         checkResult.returnCode = STATE_CRITICAL
