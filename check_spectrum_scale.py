@@ -383,7 +383,7 @@ def checkPools(args):
         - disk usage single pool
     """
     checkResult = CheckResult()
-    command = "sudo /usr/lpp/mmfs/bin/mmlspool"
+    command = "/usr/lpp/mmfs/bin/mmlspool"
     command += " " + args.device
     
     output = executeBashCommand(command)

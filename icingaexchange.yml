@@ -8,11 +8,11 @@ type: Plugin
 license: gplv3
 releases: 
   - 
-    name: 0.4.0
-    description: "0.4.0 Development"
+    name: 0.4.1
+    description: "0.4.1 Development"
     files: 
       - 
         name: check_spectrum_scale.py
         url: "file:///check_spectrum_scale.py"
-        description: "GPFS Status check implemented"
-        checksum: b48a77e3fa69d4ef6c093084ffdf82d0 
+        description: "Simple script to monitor the GPFS filesystem"
+        checksum: f1c7da562a23003f8c605113c14528a2 
