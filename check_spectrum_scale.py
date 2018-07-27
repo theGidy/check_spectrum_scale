@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 ################################################################################
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -110,8 +110,8 @@ class PoolObject:
         self.id = int(id)
         self.data = (data == 'yes')
         self.meta = (meta == 'yes')
-	self.unitFaktor=self._getUnitFaktor(unit)
-	self.unit=unit
+        self.unitFaktor=self._getUnitFaktor(unit)
+        self.unit=unit
         self.dataTotal = int(dataTotal)/self.unitFaktor
         self.dataFree = int(dataFree)/self.unitFaktor
         self.metaTotal = int(metaTotal)/self.unitFaktor
@@ -130,8 +130,8 @@ class PoolObject:
         return text
 
     def _getUnitFaktor(self,unit):
-	unit_dict={'KB':1000,'MB':1000000,'GB':1000000000,'TB':1000000000000}
-    	return unit_dict[unit]
+        unit_dict={'KB':1000,'MB':1000000,'GB':1000000000,'TB':1000000000000}
+        return unit_dict[unit]
 	
 class FileSetObject:
     """
@@ -215,7 +215,7 @@ def executeBashCommand(command):
     """
     
     process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-    return process.communicate()[0]
+    return str(process.communicate()[0])
     
     
 def checkRequirments():
@@ -242,11 +242,11 @@ def checkStatus(args):
     checkResult = CheckResult()
     output = executeBashCommand("sudo /usr/lpp/mmfs/bin/mmgetstate -LY")
     
-    lines = output.split("\n")
+    lines = output.split("\\n")
     list = []
     for line in lines:
         list.append(line.split(":"))     
-    
+   
     state = getValueFromList(list, "state", 1)
     quorumNeeded = getValueFromList(list, "quorum", 1)
     nodeName = getValueFromList(list, "nodeName", 1)
@@ -306,7 +306,7 @@ def checkFileSets(args):
     command += " -Y"
    
     output = executeBashCommand(command)
-    lines = output.split("\n")
+    lines = output.split("\\n")
     list = []
     for line in lines:
         list.append(line.split(":"))
@@ -349,7 +349,7 @@ def checkFileSets(args):
             checkResult.longOutput += "Warning FileSets: " + ", ".join(warningNodeUtilization) + "\n"
         checkResult.performanceData = ""
         for x in resultList:
-            checkResult.performanceData += x.filesetName + "=" + str(x.freeInodes) + ";" + str(calculatePercentageOfValue(args.warning, x.maxInodes)) + ";" + str(calculatePercentageOfValue(args.critical, x.maxInodes)) + ";0;" + str(x.maxInodes) + " "+x.filesetName+"_blockSiz="+str(x.dataSize)+"KB;;;; ";
+            checkResult.performanceData += x.filesetName + "=" + str(x.freeInodes) + ";" + str(calculatePercentageOfValue(args.warning, x.maxInodes)) + ";" + str(calculatePercentageOfValue(args.critical, x.maxInodes)) + ";0;" + str(x.maxInodes)+" "+x.filesetName+"_blockSiz="+str(x.dataSize)+"KB;;;; ";
             
     elif args.link:
         linkedList=[x.filesetName for x in resultList if x.status == 'Linked']
@@ -383,19 +383,19 @@ def checkPools(args):
         - disk usage single pool
     """
     checkResult = CheckResult()
-    command = "/usr/lpp/mmfs/bin/mmlspool"
+    command = "sudo /usr/lpp/mmfs/bin/mmlspool"
     command += " " + args.device
     
     output = executeBashCommand(command)
     match=re.search(r'\([^(]*\)',output)
     if(match != None):
-	unit=match.group().replace('(','').replace(')','')
+        unit=match.group().replace('(','').replace(')','')
     else:
-	unit='KB'
+        unit='KB'
     output =re.sub('\\([^\\(]*\\)','',output)
     output = re.sub(' {1,}', ';', output)
     # print(output)
-    lines = output.split("\n")
+    lines = output.split("\\n")
     list = []
     for line in lines:
         list.append(line.split(";"))
@@ -407,7 +407,7 @@ def checkPools(args):
     # print(list)
     resultList = []
     for row in list:
-	poolObject = PoolObject(name=row[0], id=row[1], data=row[4], meta=row[5], dataTotal=row[6], dataFree=row[7], metaTotal=row[8], metaFree=row[9],unit=unit)
+        poolObject = PoolObject(name=row[0], id=row[1], data=row[4], meta=row[5], dataTotal=row[6], dataFree=row[7], metaTotal=row[8], metaFree=row[9],unit=unit)
         if poolObject.dataFree < calculatePercentageOfValue(args.critical, poolObject.dataTotal):
                      poolObject.criticalData = True
         if poolObject.metaFree < calculatePercentageOfValue(args.critical, poolObject.metaTotal):
@@ -435,9 +435,9 @@ def checkPools(args):
 
     checkResult.performanceData = ""
     for x in [x for x in resultList if x.data == True]:
-        checkResult.performanceData += "Data_" + x.name + "=" + str(x.dataFree)+x.unit + ";" + str(calculatePercentageOfValue(args.warning, x.dataTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.dataTotal)) + ";;" + str(x.dataTotal) + " ";
+        checkResult.performanceData += "Data_free" + x.name + "=" + str(x.dataFree)+x.unit + ";" + str(calculatePercentageOfValue(args.warning, x.dataTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.dataTotal)) + ";;" + str(x.dataTotal) + " ";
     for x in [x for x in resultList if x.meta == True]:
-        checkResult.performanceData += "Meta_" + x.name + "=" + str(x.metaFree)+x.unit + ";" + str(calculatePercentageOfValue(args.warning, x.metaTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.metaTotal)) + ";;" + str(x.metaTotal) + " ";
+        checkResult.performanceData += "Meta_free" + x.name + "=" + str(x.metaFree)+x.unit + ";" + str(calculatePercentageOfValue(args.warning, x.metaTotal)) + ";" + str(calculatePercentageOfValue(args.critical, x.metaTotal)) + ";;" + str(x.metaTotal) + " ";
             
     if len(criticalData) > 0 or len(criticalMeta) > 0 :
         checkResult.returnCode = STATE_CRITICAL
@@ -488,7 +488,7 @@ def checkQuota(args):
   
     
     output = executeBashCommand(command)
-    lines = output.split("\n")
+    lines = output.split("\\n")
     list = []
     for line in lines:
         list.append(line.split(":"))
