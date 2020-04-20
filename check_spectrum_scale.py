@@ -218,7 +218,7 @@ def executeBashCommand(command):
     return str(process.communicate()[0])
     
     
-def checkRequirments():
+def checkRequirements():
     """
     Check if following tools are installed on the system:
         -IBM Spectrum Scale
@@ -678,9 +678,9 @@ def argumentParser():
 # # Main 
 ################################################################################
 if __name__ == '__main__':
-    checkRequirments()
     parser = argumentParser()
     args = parser.parse_args()
     # print parser.parse_args()
+    checkRequirements()
     args.func(args)
 
