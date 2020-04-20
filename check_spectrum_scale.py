@@ -229,7 +229,7 @@ def checkRequirments():
         checkResult.returnCode = STATE_CRITICAL
         checkResult.returnMessage = "CRITICAL - No IBM Spectrum Scale Installation detected."
         checkResult.performanceData = ""
-        checkReuslt.printMonitoringOutput()     
+        checkResult.printMonitoringOutput()     
     
 
 def checkStatus(args):
