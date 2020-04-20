@@ -242,7 +242,7 @@ def checkStatus(args):
     checkResult = CheckResult()
     output = executeBashCommand("sudo /usr/lpp/mmfs/bin/mmgetstate -LY")
     
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(":"))     
@@ -312,7 +312,7 @@ def checkFileSets(args):
         exclude_filesets = []
 
     output = executeBashCommand(command)
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(":"))
@@ -405,7 +405,7 @@ def checkPools(args):
     output =re.sub('\\([^\\(]*\\)','',output)
     output = re.sub(' {1,}', ';', output)
     # print(output)
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(";"))
@@ -498,7 +498,7 @@ def checkQuota(args):
   
     
     output = executeBashCommand(command)
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(":"))
