@@ -304,7 +304,13 @@ def checkFileSets(args):
     if args.size:
         command += " -d"
     command += " -Y"
-   
+  
+    # compile list of fileset names to be excluded
+    if args.exclude_filesets:
+        exclude_filesets = args.exclude_filesets.split(',')
+    else:
+        exclude_filesets = []
+
     output = executeBashCommand(command)
     lines = output.split("\\n")
     list = []
@@ -319,6 +325,10 @@ def checkFileSets(args):
         idx = list.index(i)
         # Skipp header
         if idx > 0:
+            if list[idx][7] in exclude_filesets:
+                # fileset is on our exclude list, ignore it
+                continue
+
             if args.size:
                 filesetObject = FileSetObject(filesystemName=list[idx][6], filesetName=list[idx][7], id=list[idx][7], status=list[idx][10], maxInodes=list[idx][32], allocInodes=list[idx][33], dataSize=list[idx][15])
             else:
@@ -633,6 +643,7 @@ def argumentParser():
     filesetParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if inode utilization is over this value (default=95 percent)', default=96)
     filesetParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the inode utilization', required=True) 
     filesetParser.add_argument('-f', '--filesets', dest='filesets', action='store', help='Name of the filesets to check (delimiter is ,)')
+    filesetParser.add_argument('-x', '--exclude-filesets', dest='exclude_filesets', action='store', help='Name of the filesets to exclude (delimiter is ,)')
     filesetParser.add_argument('-s', '--size', dest='size', action='store_true', help='Additional outputs the blocksize. Needs more than 5 minutes to respond!')
     filesetGroup = filesetParser.add_mutually_exclusive_group(required=True)
     filesetGroup.add_argument('-l', '--link', dest='link', action='store_true', help='Check the link status of given filesets')
