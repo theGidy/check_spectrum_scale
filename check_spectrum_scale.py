@@ -202,7 +202,6 @@ def getValueFromList(list, header, row):
         Value from the given list
     """
     col = list[0].index(header)
-
     return list[row][col]
 
 def executeBashCommand(command):
@@ -214,11 +213,11 @@ def executeBashCommand(command):
         Returned string from command
     """
     
-    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, universal_newlines=True)
     return str(process.communicate()[0])
     
     
-def checkRequirments():
+def checkRequirements():
     """
     Check if following tools are installed on the system:
         -IBM Spectrum Scale
@@ -229,7 +228,7 @@ def checkRequirments():
         checkResult.returnCode = STATE_CRITICAL
         checkResult.returnMessage = "CRITICAL - No IBM Spectrum Scale Installation detected."
         checkResult.performanceData = ""
-        checkReuslt.printMonitoringOutput()     
+        checkResult.printMonitoringOutput()     
     
 
 def checkStatus(args):
@@ -242,13 +241,15 @@ def checkStatus(args):
     checkResult = CheckResult()
     output = executeBashCommand("sudo /usr/lpp/mmfs/bin/mmgetstate -LY")
     
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(":"))     
    
     state = getValueFromList(list, "state", 1)
     quorumNeeded = getValueFromList(list, "quorum", 1)
+    #filter asterix if tie braker disk is used
+    quorumNeeded = quorumNeeded.replace('*','')
     nodeName = getValueFromList(list, "nodeName", 1)
     quorumsUp = getValueFromList(list, "nodesUp", 1)
     totalNodes = getValueFromList(list, "totalNodes", 1)
@@ -256,10 +257,10 @@ def checkStatus(args):
     if args.quorum: 
         if quorumsUp < quorumNeeded :   
             checkResult.returnCode = STATE_CRITICAL
-            checkResult.returnMessage = "Critical - GPFS is ReadOnly because not enougth quorum " + str(quorumsUp) + " are online and " + str(quorumNeeded) + " are required!"  
+            checkResult.returnMessage = "Critical - GPFS is ReadOnly because only " + str(quorumsUp) + " nodes are online and " + str(quorumNeeded) + " are required for quorum"  
         else:
             checkResult.returnCode = STATE_OK
-            checkResult.returnMessage = "OK - " + str(quorumsUp) + " are up and " + str(quorumNeeded) + " quroums are required!"
+            checkResult.returnMessage = "OK - " + str(quorumsUp) + " are up and " + str(quorumNeeded) + " are required for quorum"
         checkResult.performanceData = "qourumUp=" + str(quorumsUp) + ";" + str(quorumNeeded) + ";;; quorumNeeded=" + str(quorumNeeded) + ";;; totalNodes=" + str(totalNodes)
                 
     if args.status:                
@@ -273,10 +274,10 @@ def checkStatus(args):
     if args.nodes:
         if totalNodes < args.critical :   
             checkResult.returnCode = STATE_CRITICAL
-            checkResult.returnMessage = "Critical - Only" + str(totalNodes) + " are up"
+            checkResult.returnMessage = "Critical - Only " + str(totalNodes) + " are up"
         elif totalNodes < args.warning :
             checkResult.returnCode = STATE_WARNING
-            checkResult.returnMessage = "WARNING - Only" + str(totalNodes) + " are up"
+            checkResult.returnMessage = "WARNING - Only " + str(totalNodes) + " are up"
         else:
             checkResult.returnCode = STATE_OK
             checkResult.returnMessage = "OK - " + str(totalNodes) + " are up"
@@ -304,9 +305,15 @@ def checkFileSets(args):
     if args.size:
         command += " -d"
     command += " -Y"
-   
+  
+    # compile list of fileset names to be excluded
+    if args.exclude_filesets:
+        exclude_filesets = args.exclude_filesets.split(',')
+    else:
+        exclude_filesets = []
+
     output = executeBashCommand(command)
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(":"))
@@ -319,6 +326,10 @@ def checkFileSets(args):
         idx = list.index(i)
         # Skipp header
         if idx > 0:
+            if list[idx][7] in exclude_filesets:
+                # fileset is on our exclude list, ignore it
+                continue
+
             if args.size:
                 filesetObject = FileSetObject(filesystemName=list[idx][6], filesetName=list[idx][7], id=list[idx][7], status=list[idx][10], maxInodes=list[idx][32], allocInodes=list[idx][33], dataSize=list[idx][15])
             else:
@@ -395,7 +406,7 @@ def checkPools(args):
     output =re.sub('\\([^\\(]*\\)','',output)
     output = re.sub(' {1,}', ';', output)
     # print(output)
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(";"))
@@ -488,7 +499,7 @@ def checkQuota(args):
   
     
     output = executeBashCommand(command)
-    lines = output.split("\\n")
+    lines = output.split("\n")
     list = []
     for line in lines:
         list.append(line.split(":"))
@@ -633,6 +644,7 @@ def argumentParser():
     filesetParser.add_argument('-c', '--critical', dest='critical', action='store', help='Critical if inode utilization is over this value (default=95 percent)', default=96)
     filesetParser.add_argument('-d', '--device', dest='device', action='store', help='Device to check the inode utilization', required=True) 
     filesetParser.add_argument('-f', '--filesets', dest='filesets', action='store', help='Name of the filesets to check (delimiter is ,)')
+    filesetParser.add_argument('-x', '--exclude-filesets', dest='exclude_filesets', action='store', help='Name of the filesets to exclude (delimiter is ,)')
     filesetParser.add_argument('-s', '--size', dest='size', action='store_true', help='Additional outputs the blocksize. Needs more than 5 minutes to respond!')
     filesetGroup = filesetParser.add_mutually_exclusive_group(required=True)
     filesetGroup.add_argument('-l', '--link', dest='link', action='store_true', help='Check the link status of given filesets')
@@ -667,9 +679,9 @@ def argumentParser():
 # # Main 
 ################################################################################
 if __name__ == '__main__':
-    checkRequirments()
     parser = argumentParser()
     args = parser.parse_args()
     # print parser.parse_args()
+    checkRequirements()
     args.func(args)
 
